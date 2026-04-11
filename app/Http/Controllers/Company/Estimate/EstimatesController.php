@@ -11,7 +11,7 @@ use App\Http\Resources\InvoiceResource;
 use App\Jobs\GenerateEstimatePdfJob;
 use App\Models\Estimate;
 use App\Models\Invoice;
-use App\Services\Documents\EstimateService;
+use App\Services\Document\EstimateService;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Markdown;
 

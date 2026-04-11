@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RecurringInvoiceRequest;
 use App\Http\Resources\RecurringInvoiceResource;
 use App\Models\RecurringInvoice;
-use App\Services\Documents\RecurringInvoiceService;
+use App\Services\Document\RecurringInvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 

@@ -6,7 +6,7 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Estimate;
 use App\Models\User;
-use App\Services\Documents\SerialNumberService;
+use App\Services\Document\SerialNumberService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class EstimateFactory extends Factory

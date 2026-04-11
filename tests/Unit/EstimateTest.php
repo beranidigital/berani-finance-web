@@ -4,8 +4,8 @@ use App\Http\Requests\EstimatesRequest;
 use App\Models\Estimate;
 use App\Models\EstimateItem;
 use App\Models\Tax;
-use App\Services\Documents\DocumentItemService;
-use App\Services\Documents\EstimateService;
+use App\Services\Document\DocumentItemService;
+use App\Services\Document\EstimateService;
 use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function () {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Documents;
+namespace App\Services\Document;
 
 use App;
 use App\Facades\Hashids;

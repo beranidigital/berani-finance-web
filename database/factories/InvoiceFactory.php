@@ -7,7 +7,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\User;
-use App\Services\Documents\SerialNumberService;
+use App\Services\Document\SerialNumberService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class InvoiceFactory extends Factory

@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Jobs\GeneratePaymentPdfJob;
-use App\Services\Documents\PaymentService;
+use App\Services\Document\PaymentService;
 use App\Support\Pdf\PdfHtmlSanitizer;
 use App\Traits\GeneratesPdfTrait;
 use App\Traits\HasCustomFieldsTrait;

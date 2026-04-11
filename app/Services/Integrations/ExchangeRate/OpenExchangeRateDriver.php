@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Services\ExchangeRate;
+namespace App\Services\Integrations\ExchangeRate;
 
 use Illuminate\Support\Facades\Http;
 
-class CurrencyFreakDriver extends ExchangeRateDriver
+class OpenExchangeRateDriver extends ExchangeRateDriver
 {
-    private string $baseUrl = 'https://api.currencyfreaks.com';
+    private string $baseUrl = 'https://openexchangerates.org/api';
 
     public function getExchangeRate(string $baseCurrency, string $targetCurrency): array
     {
-        $url = "{$this->baseUrl}/latest?apikey={$this->apiKey}&symbols={$targetCurrency}&base={$baseCurrency}";
+        $url = "{$this->baseUrl}/latest.json?app_id={$this->apiKey}&base={$baseCurrency}&symbols={$targetCurrency}";
         $response = Http::get($url)->json();
 
-        if (array_key_exists('success', $response) && $response['success'] == false) {
-            throw new ExchangeRateException($response['error']['message'], 'provider_error');
+        if (array_key_exists('error', $response)) {
+            throw new ExchangeRateException($response['description'], $response['message']);
         }
 
         return array_values($response['rates']);
@@ -22,7 +22,7 @@ class CurrencyFreakDriver extends ExchangeRateDriver
 
     public function getSupportedCurrencies(): array
     {
-        $url = "{$this->baseUrl}/currency-symbols";
+        $url = "{$this->baseUrl}/currencies.json";
         $response = Http::get($url)->json();
 
         if ($response == null) {
@@ -36,17 +36,15 @@ class CurrencyFreakDriver extends ExchangeRateDriver
 
     public function validateConnection(): array
     {
-        $url = "{$this->baseUrl}/latest?apikey={$this->apiKey}&symbols=INR&base=USD";
+        $url = "{$this->baseUrl}/latest.json?app_id={$this->apiKey}&base=USD&symbols=EUR";
         $response = Http::get($url)->json();
 
-        if ($response == null) {
-            throw new ExchangeRateException('Server not responding', 'server_error');
-        }
-
-        if (array_key_exists('success', $response) && array_key_exists('error', $response)) {
-            if ($response['error']['status'] == 404) {
+        if (array_key_exists('error', $response)) {
+            if ($response['status'] == 401) {
                 throw new ExchangeRateException('Please Enter Valid Provider Key.', 'invalid_key');
             }
+
+            throw new ExchangeRateException($response['description'], $response['message']);
         }
 
         return array_values($response['rates']);

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\Documents\InvoiceService;
+use App\Services\Document\InvoiceService;
 use App\Support\Pdf\PdfHtmlSanitizer;
 use App\Support\Pdf\PdfTemplateUtils;
 use App\Traits\GeneratesPdfTrait;

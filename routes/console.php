@@ -2,7 +2,7 @@
 
 use App\Models\CompanySetting;
 use App\Models\RecurringInvoice;
-use App\Services\Documents\RecurringInvoiceService;
+use App\Services\Document\RecurringInvoiceService;
 use App\Support\Setup\InstallUtils;
 use Illuminate\Support\Facades\Schedule;
 

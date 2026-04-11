@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\ExchangeRate;
+namespace App\Services\Integrations\ExchangeRate;
 
 abstract class ExchangeRateDriver
 {

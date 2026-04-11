@@ -8,7 +8,7 @@ use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\SendPaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
-use App\Services\Documents\PaymentService;
+use App\Services\Document\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Mail\Markdown;

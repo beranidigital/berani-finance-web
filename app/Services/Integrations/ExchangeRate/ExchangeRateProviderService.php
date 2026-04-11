@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\ExchangeRate;
+namespace App\Services\Integrations\ExchangeRate;
 
 use App\Http\Requests\ExchangeRateProviderRequest;
 use App\Models\CompanySetting;
 use App\Models\ExchangeRateLog;
 use App\Models\ExchangeRateProvider;
-use App\Services\ExchangeRate\ExchangeRateDriverFactory;
-use App\Services\ExchangeRate\ExchangeRateException;
+use App\Services\Integrations\ExchangeRate\ExchangeRateDriverFactory;
+use App\Services\Integrations\ExchangeRate\ExchangeRateException;
 
 class ExchangeRateProviderService
 {
