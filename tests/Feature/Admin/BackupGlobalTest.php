@@ -3,7 +3,7 @@
 use App\Jobs\CreateBackupJob;
 use App\Models\FileDisk;
 use App\Models\User;
-use App\Services\Backup\BackupConfigurationFactory;
+use App\Services\Storage\BackupConfigurationFactory;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;

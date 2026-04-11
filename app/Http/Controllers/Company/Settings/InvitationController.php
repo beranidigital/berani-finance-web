@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CompanyInvitationResource;
 use App\Models\Company;
 use App\Models\CompanyInvitation;
-use App\Services\InvitationService;
+use App\Services\Company\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

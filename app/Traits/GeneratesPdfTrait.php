@@ -6,8 +6,8 @@ use App\Models\Address;
 use App\Models\CompanySetting;
 use App\Models\FileDisk;
 use App\Models\Setting;
-use App\Services\FontService;
-use App\Support\PdfHtmlSanitizer;
+use App\Services\Pdf\FontService;
+use App\Support\Pdf\PdfHtmlSanitizer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 

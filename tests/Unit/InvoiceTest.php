@@ -4,8 +4,8 @@ use App\Http\Requests\InvoicesRequest;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Tax;
-use App\Services\DocumentItemService;
-use App\Services\InvoiceService;
+use App\Services\Documents\DocumentItemService;
+use App\Services\Documents\InvoiceService;
 use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function () {

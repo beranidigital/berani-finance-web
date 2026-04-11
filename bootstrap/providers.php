@@ -7,7 +7,7 @@ use App\Providers\DropboxServiceProvider;
 use App\Providers\PdfServiceProvider;
 use App\Providers\RouteServiceProvider;
 use App\Providers\ViewServiceProvider;
-use App\Services\Hashids\HashidsServiceProvider;
+use App\Support\Hashids\HashidsServiceProvider;
 
 return [
     HashidsServiceProvider::class,

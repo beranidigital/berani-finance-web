@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\CreateBackupJob;
 use App\Rules\Backup\PathToZip;
-use App\Services\Backup\BackupService;
+use App\Services\Storage\BackupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;

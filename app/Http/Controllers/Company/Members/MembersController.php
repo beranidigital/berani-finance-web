@@ -7,7 +7,7 @@ use App\Http\Requests\DeleteMemberRequest;
 use App\Http\Requests\MemberRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Services\MemberService;
+use App\Services\Company\MemberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

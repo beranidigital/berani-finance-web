@@ -1,6 +1,6 @@
 <?php
 
-use App\Support\PdfHtmlSanitizer;
+use App\Support\Pdf\PdfHtmlSanitizer;
 
 it('removes img tags that could trigger SSRF during PDF rendering', function () {
     $html = "<p>Hi</p><img src='http://example.com/x'>";

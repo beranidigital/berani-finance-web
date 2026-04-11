@@ -8,7 +8,7 @@ use App\Http\Requests\AdminCompanyUpdateRequest;
 use App\Http\Requests\CompaniesRequest;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
-use App\Services\CompanyService;
+use App\Services\Company\CompanyService;
 use Illuminate\Http\Request;
 use Silber\Bouncer\BouncerFacade;
 

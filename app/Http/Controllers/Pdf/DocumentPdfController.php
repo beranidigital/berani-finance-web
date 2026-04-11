@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Estimate;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Services\EstimateService;
-use App\Services\InvoiceService;
+use App\Services\Documents\EstimateService;
+use App\Services\Documents\InvoiceService;
 use Illuminate\Http\Request;
 
 class DocumentPdfController extends Controller

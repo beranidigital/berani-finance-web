@@ -6,8 +6,8 @@ use App\Facades\Hashids;
 use App\Models\Company;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\CompanyService;
-use App\Services\Setup\InstallUtils;
+use App\Services\Company\CompanyService;
+use App\Support\Setup\InstallUtils;
 use Illuminate\Database\Seeder;
 use Silber\Bouncer\BouncerFacade;
 

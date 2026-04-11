@@ -8,7 +8,7 @@ use App\Models\CompanySetting;
 use App\Models\Customer;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\CompanyService;
+use App\Services\Company\CompanyService;
 use Illuminate\Database\Seeder;
 use Silber\Bouncer\BouncerFacade;
 

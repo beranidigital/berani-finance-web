@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Estimate;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Services\SerialNumberService;
+use App\Services\Documents\SerialNumberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

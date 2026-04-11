@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Services\InvoiceService;
-use App\Services\Pdf\PdfTemplateUtils;
-use App\Support\PdfHtmlSanitizer;
+use App\Services\Documents\InvoiceService;
+use App\Support\Pdf\PdfHtmlSanitizer;
+use App\Support\Pdf\PdfTemplateUtils;
 use App\Traits\GeneratesPdfTrait;
 use App\Traits\HasCustomFieldsTrait;
 use Carbon\Carbon;

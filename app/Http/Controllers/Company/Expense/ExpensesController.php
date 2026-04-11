@@ -8,7 +8,7 @@ use App\Http\Requests\ExpenseRequest;
 use App\Http\Requests\UploadExpenseReceiptRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
-use App\Services\ExpenseService;
+use App\Services\Documents\ExpenseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

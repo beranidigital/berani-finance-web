@@ -4,9 +4,9 @@ namespace App\Providers;
 
 use App\Models\FileDisk;
 use App\Models\Setting;
-use App\Services\FileDiskService;
-use App\Services\MailConfigurationService;
-use App\Services\Setup\InstallUtils;
+use App\Services\Mail\MailConfigurationService;
+use App\Services\Storage\FileDiskService;
+use App\Support\Setup\InstallUtils;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\FileDiskService;
+use App\Services\Storage\FileDiskService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

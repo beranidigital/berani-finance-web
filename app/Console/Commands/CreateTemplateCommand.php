@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Pdf\PdfTemplateUtils;
+use App\Support\Pdf\PdfTemplateUtils;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;

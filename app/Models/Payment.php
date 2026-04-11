@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Jobs\GeneratePaymentPdfJob;
-use App\Services\PaymentService;
-use App\Support\PdfHtmlSanitizer;
+use App\Services\Documents\PaymentService;
+use App\Support\Pdf\PdfHtmlSanitizer;
 use App\Traits\GeneratesPdfTrait;
 use App\Traits\HasCustomFieldsTrait;
 use Carbon\Carbon;

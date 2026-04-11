@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Setup;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
-use App\Services\Setup\InstallUtils;
+use App\Support\Setup\InstallUtils;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

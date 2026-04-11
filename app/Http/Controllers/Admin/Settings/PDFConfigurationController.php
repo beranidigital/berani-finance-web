@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PDFConfigurationRequest;
 use App\Models\Setting;
-use App\Services\Setup\EnvironmentManager;
+use App\Support\Setup\EnvironmentManager;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 

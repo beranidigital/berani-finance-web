@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Setup;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DatabaseEnvironmentRequest;
-use App\Services\Setup\EnvironmentManager;
-use App\Services\Setup\InstallUtils;
+use App\Support\Setup\EnvironmentManager;
+use App\Support\Setup\InstallUtils;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 

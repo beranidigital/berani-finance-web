@@ -7,7 +7,7 @@ use App\Http\Requests\DiskEnvironmentRequest;
 use App\Http\Resources\FileDiskResource;
 use App\Models\FileDisk;
 use App\Models\Setting;
-use App\Services\FileDiskService;
+use App\Services\Storage\FileDiskService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

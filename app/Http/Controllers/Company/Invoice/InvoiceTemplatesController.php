@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Company\Invoice;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
-use App\Services\Pdf\PdfTemplateUtils;
+use App\Support\Pdf\PdfTemplateUtils;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

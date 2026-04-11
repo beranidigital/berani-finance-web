@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Company\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\CompanyInvitation;
 use App\Models\User;
-use App\Services\InvitationService;
+use App\Services\Company\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;

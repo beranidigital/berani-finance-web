@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Services\MailConfigurationService;
+use App\Services\Mail\MailConfigurationService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class MailEnvironmentRequest extends FormRequest
