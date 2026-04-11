@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Company\General;
 
 use App\Http\Controllers\Controller;
-use App\Support\Formatters\DateFormatter;
-use App\Support\Formatters\TimeFormatter;
-use App\Support\Formatters\TimeZones;
+use App\Support\Formatting\DateFormatter;
+use App\Support\Formatting\TimeFormatter;
+use App\Support\Formatting\TimeZones;
 use Illuminate\Http\JsonResponse;
 
 class FormatsController extends Controller

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\Formatters;
+namespace App\Support\Formatting;
 
 use Carbon\Carbon;
 

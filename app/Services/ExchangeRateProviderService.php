@@ -6,8 +6,8 @@ use App\Http\Requests\ExchangeRateProviderRequest;
 use App\Models\CompanySetting;
 use App\Models\ExchangeRateLog;
 use App\Models\ExchangeRateProvider;
-use App\Support\Integrations\ExchangeRate\ExchangeRateDriverFactory;
-use App\Support\Integrations\ExchangeRate\ExchangeRateException;
+use App\Support\ExchangeRate\ExchangeRateDriverFactory;
+use App\Support\ExchangeRate\ExchangeRateException;
 
 class ExchangeRateProviderService
 {
