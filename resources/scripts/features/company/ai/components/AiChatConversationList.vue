@@ -17,10 +17,10 @@ async function remove(convo: AiConversationSummary, event: MouseEvent): Promise<
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="p-3 border-b border-line-default">
+    <div class="h-12 px-3 border-b border-line-default flex items-center">
       <button
         type="button"
-        class="w-full text-left text-sm font-medium rounded px-3 py-2 bg-btn-primary text-white hover:bg-btn-primary-hover"
+        class="w-full text-center text-xs font-medium rounded px-2 py-1 bg-btn-primary text-white hover:bg-btn-primary-hover"
         @click="store.newConversation()"
       >
         + {{ $t('ai.chat.new_conversation') }}

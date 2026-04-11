@@ -58,7 +58,7 @@ async function onSend(message: string): Promise<void> {
 
         <!-- Messages + input -->
         <div class="flex-1 flex flex-col">
-          <div class="flex items-center justify-between p-3 border-b border-line-default">
+          <div class="h-12 flex items-center justify-between px-3 border-b border-line-default">
             <div class="flex items-center gap-2">
               <BaseIcon name="SparklesIcon" class="w-5 h-5 text-primary-500" />
               <h2 class="text-sm font-semibold text-heading">
