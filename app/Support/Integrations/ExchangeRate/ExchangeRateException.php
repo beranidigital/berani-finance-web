@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Integrations\ExchangeRate;
+namespace App\Support\Integrations\ExchangeRate;
 
 class ExchangeRateException extends \RuntimeException
 {

@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use App\Services\Integrations\ExchangeRate\CurrencyConverterDriver;
-use App\Services\Integrations\ExchangeRate\CurrencyFreakDriver;
-use App\Services\Integrations\ExchangeRate\CurrencyLayerDriver;
-use App\Services\Integrations\ExchangeRate\OpenExchangeRateDriver;
+use App\Support\Integrations\ExchangeRate\CurrencyConverterDriver;
+use App\Support\Integrations\ExchangeRate\CurrencyFreakDriver;
+use App\Support\Integrations\ExchangeRate\CurrencyLayerDriver;
+use App\Support\Integrations\ExchangeRate\OpenExchangeRateDriver;
 use Illuminate\Support\ServiceProvider;
 use InvoiceShelf\Modules\Registry;
 

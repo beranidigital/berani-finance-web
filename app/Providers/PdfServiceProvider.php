@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Services\Pdf\PdfService;
+use App\Support\Pdf\PdfService;
 use Illuminate\Support\ServiceProvider;
 
 class PdfServiceProvider extends ServiceProvider

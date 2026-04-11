@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\Pdf\FontService;
+use App\Services\FontService;
 use Illuminate\Http\JsonResponse;
 
 class FontController extends Controller

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Pdf;
+namespace App\Support\Pdf;
 
 use Gotenberg\Gotenberg;
 use Gotenberg\Stream;

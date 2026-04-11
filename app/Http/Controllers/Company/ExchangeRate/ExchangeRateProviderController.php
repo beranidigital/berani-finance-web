@@ -14,7 +14,7 @@ use App\Models\ExchangeRateProvider;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Tax;
-use App\Services\Integrations\ExchangeRate\ExchangeRateProviderService;
+use App\Services\ExchangeRateProviderService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;

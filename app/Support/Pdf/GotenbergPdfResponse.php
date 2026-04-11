@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Pdf;
+namespace App\Support\Pdf;
 
 use Illuminate\Http\Response;
 use Psr\Http\Message\ResponseInterface;
