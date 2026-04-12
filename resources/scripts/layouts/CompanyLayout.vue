@@ -22,6 +22,9 @@
         <router-view />
       </div>
     </main>
+
+    <!-- AI chat drawer — always mounted, visibility driven by the store -->
+    <AiChatDrawer v-if="globalStore.ai?.enabled && globalStore.ai?.chat_enabled" />
   </div>
 
   <BaseGlobalLoader v-else />
@@ -39,6 +42,7 @@ import SiteHeader from './partials/SiteHeader.vue'
 import SiteSidebar from './partials/SiteSidebar.vue'
 import NotificationRoot from '@/scripts/components/notifications/NotificationRoot.vue'
 import ImpersonationBanner from './partials/ImpersonationBanner.vue'
+import AiChatDrawer from '@/scripts/features/company/ai/components/AiChatDrawer.vue'
 
 interface RouteMeta {
   ability?: string | string[]

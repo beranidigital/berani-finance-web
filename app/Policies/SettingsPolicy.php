@@ -55,6 +55,15 @@ class SettingsPolicy
         return false;
     }
 
+    /**
+     * Any authenticated user with an active company context can use AI features,
+     * subject to the per-company kill-switch in AiConfigurationService.
+     */
+    public function useAi(User $user)
+    {
+        return $user !== null;
+    }
+
     public function managePDFConfig(User $user)
     {
         if ($user->isSuperAdmin()) {

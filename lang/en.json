@@ -961,7 +961,10 @@
         "rate_limited": "The provider rate limit was hit. Please try again shortly.",
         "server_error": "The AI provider returned an error. Check your configuration and try again.",
         "model_not_found": "The requested model is not available on this provider.",
-        "missing_api_key": "An API key is required to test the connection."
+        "missing_api_key": "An API key is required to test the connection.",
+        "ai_disabled": "AI is not enabled for this company.",
+        "chat_disabled": "The chat assistant is not enabled for this company.",
+        "missing_model": "No chat model is configured."
       }
     },
     "address_information": {
@@ -1879,6 +1882,19 @@
       "impersonate_confirm": "You are about to impersonate {name}. You will be logged in as this user with a temporary session that expires in 2 hours. This action is logged.",
       "impersonating_banner": "You are currently impersonating a user. All actions are logged.",
       "stop_impersonating": "Stop Impersonating"
+    }
+  },
+  "ai": {
+    "chat": {
+      "title": "AI Assistant",
+      "new_conversation": "New conversation",
+      "no_conversations": "No conversations yet.",
+      "untitled": "Untitled",
+      "empty_state": "Ask me anything about your invoices, customers, payments, or expenses.",
+      "thinking": "Thinking…",
+      "send": "Send",
+      "sending": "Sending…",
+      "input_placeholder": "Ask about your invoices, customers, or payments…"
     }
   }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Providers\AiServiceProvider;
 use App\Providers\AppConfigProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\DriverRegistryProvider;
@@ -17,5 +18,6 @@ return [
     ViewServiceProvider::class,
     PdfServiceProvider::class,
     DriverRegistryProvider::class,
+    AiServiceProvider::class,
     AppConfigProvider::class,
 ];

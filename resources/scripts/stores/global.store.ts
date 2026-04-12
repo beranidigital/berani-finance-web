@@ -36,6 +36,11 @@ export const useGlobalStore = defineStore('global', () => {
   const mainMenu = ref<MenuItem[]>([])
   const settingMenu = ref<MenuItem[]>([])
   const userMenu = ref<Array<{ title: string; link: string; icon: string; name: string }>>([])
+  const ai = ref<{ enabled: boolean; chat_enabled: boolean; text_generation_enabled: boolean }>({
+    enabled: false,
+    chat_enabled: false,
+    text_generation_enabled: false,
+  })
   const isAppLoaded = ref<boolean>(false)
   const isSidebarOpen = ref<boolean>(false)
   const isSidebarCollapsed = ref<boolean>(localStore.getBoolean('sidebarCollapsed'))
@@ -64,6 +69,11 @@ export const useGlobalStore = defineStore('global', () => {
       mainMenu.value = response.main_menu
       settingMenu.value = response.setting_menu
       userMenu.value = response.user_menu ?? []
+      ai.value = response.ai ?? {
+        enabled: false,
+        chat_enabled: false,
+        text_generation_enabled: false,
+      }
 
       config.value = response.config
       globalSettings.value = response.global_settings
@@ -292,6 +302,7 @@ export const useGlobalStore = defineStore('global', () => {
     mainMenu,
     settingMenu,
     userMenu,
+    ai,
     isAppLoaded,
     isSidebarOpen,
     isSidebarCollapsed,

@@ -99,6 +99,28 @@
         />
       </li>
 
+      <!-- AI chat drawer trigger -->
+      <li
+        v-if="
+          !companyStore.isAdminMode &&
+          globalStore.ai?.enabled &&
+          globalStore.ai?.chat_enabled
+        "
+        class="ml-2"
+      >
+        <button
+          type="button"
+          class="
+            flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-lg
+            bg-white/20 hover:bg-white/30 text-white
+          "
+          :title="$t('ai.chat.title')"
+          @click="aiChatStore.toggle()"
+        >
+          <BaseIcon name="SparklesIcon" class="w-5 h-5" />
+        </button>
+      </li>
+
       <!-- Company switcher -->
       <li>
         <CompanySwitcher />
@@ -182,6 +204,7 @@ import { useAuthStore } from '@/scripts/stores/auth.store'
 import { useUserStore } from '@/scripts/stores/user.store'
 import { useGlobalStore } from '@/scripts/stores/global.store'
 import { useCompanyStore } from '@/scripts/stores/company.store'
+import { useAiChatStore } from '@/scripts/features/company/ai/stores/ai-chat.store'
 import { useTheme } from '@/scripts/composables/use-theme'
 import { ABILITIES } from '@/scripts/config/abilities'
 import { THEME } from '@/scripts/config/constants'
@@ -199,6 +222,7 @@ const authStore = useAuthStore()
 const userStore = useUserStore()
 const globalStore = useGlobalStore()
 const companyStore = useCompanyStore()
+const aiChatStore = useAiChatStore()
 const router = useRouter()
 const { currentTheme, setTheme } = useTheme()
 

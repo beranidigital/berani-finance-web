@@ -127,6 +127,10 @@ export const API = {
   // Installer AI Configuration
   INSTALLATION_AI_CONFIG: '/api/v1/installation/ai/config',
 
+  // AI Chat (Phase 2)
+  AI_CHAT: '/api/v1/ai/chat',
+  AI_CONVERSATIONS: '/api/v1/ai/conversations',
+
   // PDF Configuration
   PDF_DRIVERS: '/api/v1/pdf/drivers',
   PDF_CONFIG: '/api/v1/pdf/config',

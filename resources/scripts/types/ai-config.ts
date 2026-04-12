@@ -53,3 +53,31 @@ export interface AiTestResponse {
   message?: string
   details?: Record<string, unknown>
 }
+
+// --- Phase 2: chat types ---
+
+export interface AiConversationSummary {
+  id: number
+  title: string | null
+  model: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AiChatMessage {
+  id: number
+  role: 'user' | 'assistant'
+  content: string | null
+  created_at: string
+}
+
+export interface AiChatSendResponse {
+  conversation: AiConversationSummary
+  message: AiChatMessage
+  error?: string
+}
+
+export interface AiConversationDetail {
+  conversation: AiConversationSummary
+  messages: AiChatMessage[]
+}

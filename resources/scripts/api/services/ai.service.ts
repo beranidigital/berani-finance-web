@@ -1,7 +1,10 @@
 import { client } from '../client'
 import { API } from '../endpoints'
 import type {
+  AiChatSendResponse,
   AiConfig,
+  AiConversationDetail,
+  AiConversationSummary,
   AiDriversResponse,
   AiTestPayload,
   AiTestResponse,
@@ -46,6 +49,39 @@ export const aiService = {
 
   async testCompanyConnection(payload: AiTestPayload): Promise<AiTestResponse> {
     const { data } = await client.post(API.COMPANY_AI_TEST, payload)
+    return data
+  },
+
+  // --- Phase 2: chat ---
+
+  async sendChatMessage(
+    conversationId: number | null,
+    message: string,
+  ): Promise<AiChatSendResponse> {
+    const { data } = await client.post(API.AI_CHAT, {
+      conversation_id: conversationId,
+      message,
+    })
+    return data
+  },
+
+  async listConversations(): Promise<{ conversations: AiConversationSummary[] }> {
+    const { data } = await client.get(API.AI_CONVERSATIONS)
+    return data
+  },
+
+  async getConversation(id: number): Promise<AiConversationDetail> {
+    const { data } = await client.get(`${API.AI_CONVERSATIONS}/${id}`)
+    return data
+  },
+
+  async renameConversation(id: number, title: string): Promise<{ success: boolean }> {
+    const { data } = await client.patch(`${API.AI_CONVERSATIONS}/${id}`, { title })
+    return data
+  },
+
+  async deleteConversation(id: number): Promise<{ success: boolean }> {
+    const { data } = await client.delete(`${API.AI_CONVERSATIONS}/${id}`)
     return data
   },
 }
