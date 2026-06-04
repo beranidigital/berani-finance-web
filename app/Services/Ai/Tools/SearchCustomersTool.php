@@ -39,6 +39,11 @@ class SearchCustomersTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-customer', Customer::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $limit = min((int) ($arguments['limit'] ?? self::DEFAULT_LIMIT), self::MAX_LIMIT);

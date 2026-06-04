@@ -16,6 +16,10 @@ namespace App\Services\Ai\Tools;
  *     time from the caller's session. This is the v1 prompt-injection defense.
  *   - `execute()` — actually runs the query. Receives the resolved `$companyId`
  *     and `$userId` from the session, plus the arguments the LLM chose.
+ *   - `requiredAbility()` — the Bouncer ability the caller must hold for this
+ *     tool to be offered to the LLM and executed. Enforces per-user permissions
+ *     on top of company scoping, so a restricted role can't read data via the
+ *     assistant that it couldn't read through the normal API.
  *
  * Tools are **read-only** by contract. There is intentionally no mutation
  * surface in v1 — the chat assistant cannot create, update, or delete
@@ -67,6 +71,19 @@ abstract class AiTool
      * @return mixed Anything JSON-encodable; will be serialized and sent back to the LLM
      */
     abstract public function execute(array $arguments, int $companyId, int $userId): mixed;
+
+    /**
+     * The Bouncer ability a caller must hold to use this tool, as a
+     * `[ability, modelClass]` pair — or null if no ability beyond `use ai`.
+     *
+     * The registry checks this against the session user before exposing the tool
+     * to the LLM and again before executing it, so the assistant honours the same
+     * per-user permissions as the rest of the app. The model element may be null
+     * for gate-style abilities that take no model (e.g. `dashboard`).
+     *
+     * @return array{0: string, 1: class-string|null}|null
+     */
+    abstract public function requiredAbility(): ?array;
 
     /**
      * Convert this tool into an OpenAI-style tools array entry.

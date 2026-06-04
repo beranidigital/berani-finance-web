@@ -47,6 +47,11 @@ class ListRecentPaymentsTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-payment', Payment::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $days = min((int) ($arguments['days'] ?? self::DEFAULT_DAYS), self::MAX_DAYS);

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CompanySetting;
 use App\Models\Setting;
+use App\Rules\PublicHttpUrl;
 use App\Support\Ai\AiDriver;
 use App\Support\Ai\AiDriverFactory;
 use Illuminate\Support\Facades\Crypt;
@@ -203,7 +204,7 @@ class AiConfigurationService
             'ai_enabled' => ['nullable', 'in:YES,NO'],
             'ai_driver' => ['required_if:ai_enabled,YES', 'nullable', 'string', 'in:'.implode(',', $availableDrivers)],
             'ai_api_key' => ['required_if:ai_enabled,YES', 'nullable', 'string'],
-            'ai_base_url' => ['nullable', 'string', 'url'],
+            'ai_base_url' => ['nullable', 'string', 'url', new PublicHttpUrl],
             'ai_chat_enabled' => ['nullable', 'in:YES,NO'],
             'ai_chat_model' => ['nullable', 'string', 'max:200'],
             'ai_text_generation_enabled' => ['nullable', 'in:YES,NO'],

@@ -92,7 +92,7 @@ class AiAssistantService
         $conversation->touch();  // bump updated_at for "recent" ordering
 
         $messages = $this->buildMessagesPayload($conversation);
-        $tools = $this->toolRegistry->schemas();
+        $tools = $this->toolRegistry->schemas($conversation->user_id);
 
         for ($iteration = 0; $iteration < self::MAX_TOOL_ITERATIONS; $iteration++) {
             try {

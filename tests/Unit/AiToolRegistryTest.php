@@ -39,6 +39,11 @@ class FakeAiTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return null;
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $this->lastArgs = $arguments;
@@ -64,7 +69,7 @@ test('schemas returns OpenAI-format tool entries for every registered tool', fun
     $registry->register(new FakeAiTool('alpha'));
     $registry->register(new FakeAiTool('beta'));
 
-    $schemas = $registry->schemas();
+    $schemas = $registry->schemas(1);
 
     expect($schemas)->toHaveCount(2);
     expect($schemas[0]['type'])->toBe('function');

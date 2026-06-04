@@ -33,6 +33,11 @@ class GetInvoiceTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-invoice', Invoice::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $invoice = Invoice::query()

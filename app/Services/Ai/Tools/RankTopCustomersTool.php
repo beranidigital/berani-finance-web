@@ -71,6 +71,11 @@ class RankTopCustomersTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-customer', Customer::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $metric = (string) ($arguments['metric'] ?? 'invoiced_total');

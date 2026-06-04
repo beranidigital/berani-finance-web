@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Setup;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Rules\PublicHttpUrl;
 use App\Services\AiConfigurationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,7 +52,7 @@ class AiConfigurationController extends Controller
             'ai_enabled' => 'required|in:YES,NO',
             'ai_driver' => 'required_if:ai_enabled,YES|nullable|string',
             'ai_api_key' => 'required_if:ai_enabled,YES|nullable|string',
-            'ai_base_url' => 'nullable|string|url',
+            'ai_base_url' => ['nullable', 'string', 'url', new PublicHttpUrl],
             'ai_chat_enabled' => 'nullable|in:YES,NO',
             'ai_chat_model' => 'nullable|string|max:200',
             'ai_text_generation_enabled' => 'nullable|in:YES,NO',

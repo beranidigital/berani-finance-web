@@ -2,6 +2,8 @@
 
 namespace App\Support\Ai;
 
+use App\Support\Net\BlockedUrlException;
+use App\Support\Net\PrivateNetworkGuard;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -23,12 +25,19 @@ class OpenRouterDriver extends AiDriver
 
     protected const TIMEOUT_SECONDS = 120;
 
+    /** Memoised, SSRF-validated base URL so we don't re-resolve DNS per request. */
+    private ?string $validatedBaseUrl = null;
+
     public function chatCompletion(
         array $messages,
         string $model,
         array $tools = [],
         array $options = [],
     ): AiChatResponse {
+        // Resolve (and SSRF-validate) the URL before the try so a blocked base
+        // URL surfaces as `invalid_base_url`, not a generic `server_error`.
+        $endpoint = $this->getBaseUrl().'/chat/completions';
+
         $payload = array_filter([
             'model' => $model,
             'messages' => $messages,
@@ -43,7 +52,7 @@ class OpenRouterDriver extends AiDriver
                 ->timeout(self::TIMEOUT_SECONDS)
                 ->acceptJson()
                 ->asJson()
-                ->post($this->getBaseUrl().'/chat/completions', $payload);
+                ->post($endpoint, $payload);
         } catch (Throwable $e) {
             throw new AiException(
                 'OpenRouter request failed: '.$e->getMessage(),
@@ -86,11 +95,15 @@ class OpenRouterDriver extends AiDriver
 
     public function validateConnection(): array
     {
+        // Resolve (and SSRF-validate) the URL before the try so a blocked base
+        // URL surfaces as `invalid_base_url`, not a generic `server_error`.
+        $endpoint = $this->getBaseUrl().'/models';
+
         try {
             $response = Http::withToken($this->apiKey)
                 ->timeout(30)
                 ->acceptJson()
-                ->get($this->getBaseUrl().'/models');
+                ->get($endpoint);
         } catch (Throwable $e) {
             throw new AiException(
                 'Unable to reach OpenRouter: '.$e->getMessage(),
@@ -198,8 +211,21 @@ class OpenRouterDriver extends AiDriver
 
     protected function getBaseUrl(): string
     {
-        $url = $this->config['base_url'] ?? self::DEFAULT_BASE_URL;
+        if ($this->validatedBaseUrl !== null) {
+            return $this->validatedBaseUrl;
+        }
 
-        return rtrim($url, '/');
+        $configured = (string) ($this->config['base_url'] ?? '');
+        $url = rtrim($configured !== '' ? $configured : self::DEFAULT_BASE_URL, '/');
+
+        // SSRF guard: never let an admin/owner-supplied base URL point the
+        // server (with the bearer token attached) at a private/reserved host.
+        try {
+            PrivateNetworkGuard::assertAllowed($url);
+        } catch (BlockedUrlException $e) {
+            throw new AiException('Invalid AI base URL: '.$e->getMessage(), 'invalid_base_url', 0, $e);
+        }
+
+        return $this->validatedBaseUrl = $url;
     }
 }

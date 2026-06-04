@@ -2,6 +2,8 @@
 
 namespace App\Support\ExchangeRate;
 
+use App\Support\Net\BlockedUrlException;
+use App\Support\Net\PrivateNetworkGuard;
 use Illuminate\Support\Facades\Http;
 
 class CurrencyConverterDriver extends ExchangeRateDriver
@@ -47,11 +49,20 @@ class CurrencyConverterDriver extends ExchangeRateDriver
     {
         $type = $this->config['type'] ?? 'FREE';
 
-        return match ($type) {
+        $url = match ($type) {
             'PREMIUM' => 'https://api.currconv.com',
             'PREPAID' => 'https://prepaid.currconv.com',
             'FREE' => 'https://free.currconv.com',
             'DEDICATED' => $this->config['url'] ?? 'https://free.currconv.com',
         };
+
+        // SSRF guard: the DEDICATED plan lets the user supply this URL.
+        try {
+            PrivateNetworkGuard::assertAllowed($url);
+        } catch (BlockedUrlException $e) {
+            throw new ExchangeRateException('Invalid provider URL: '.$e->getMessage(), 'invalid_url');
+        }
+
+        return $url;
     }
 }

@@ -61,6 +61,11 @@ class RankTopItemsTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-item', Item::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $metric = (string) ($arguments['metric'] ?? 'revenue');

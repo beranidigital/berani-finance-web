@@ -53,6 +53,11 @@ class RankExpenseCategoriesTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-expense', Expense::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $period = (string) ($arguments['period'] ?? 'all_time');

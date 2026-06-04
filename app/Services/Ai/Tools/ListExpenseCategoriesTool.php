@@ -2,6 +2,7 @@
 
 namespace App\Services\Ai\Tools;
 
+use App\Models\Expense;
 use App\Models\ExpenseCategory;
 
 class ListExpenseCategoriesTool extends AiTool
@@ -23,6 +24,12 @@ class ListExpenseCategoriesTool extends AiTool
             'properties' => (object) [],
             'required' => [],
         ];
+    }
+
+    public function requiredAbility(): ?array
+    {
+        // Expense categories are gated by the expense ability (see ExpenseCategoryPolicy).
+        return ['view-expense', Expense::class];
     }
 
     public function execute(array $arguments, int $companyId, int $userId): mixed

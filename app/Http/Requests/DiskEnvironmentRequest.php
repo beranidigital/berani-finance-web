@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\PublicHttpUrl;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DiskEnvironmentRequest extends FormRequest
@@ -39,6 +40,12 @@ class DiskEnvironmentRequest extends FormRequest
                         'required',
                         'string',
                     ],
+                    'credentials.endpoint' => [
+                        'nullable',
+                        'string',
+                        'url',
+                        new PublicHttpUrl,
+                    ],
                     'credentials.root' => [
                         'required',
                         'string',
@@ -68,6 +75,8 @@ class DiskEnvironmentRequest extends FormRequest
                     'credentials.endpoint' => [
                         'required',
                         'string',
+                        'url',
+                        new PublicHttpUrl,
                     ],
                     'credentials.root' => [
                         'required',

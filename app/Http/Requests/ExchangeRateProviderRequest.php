@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\PublicHttpUrl;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ExchangeRateProviderRequest extends FormRequest
@@ -34,6 +35,14 @@ class ExchangeRateProviderRequest extends FormRequest
             ],
             'driver_config' => [
                 'nullable',
+            ],
+            // Only the CurrencyConverter "DEDICATED" plan reads a custom URL from
+            // driver_config; guard it against SSRF (private/reserved targets).
+            'driver_config.url' => [
+                'nullable',
+                'string',
+                'url',
+                new PublicHttpUrl,
             ],
             'active' => [
                 'nullable',

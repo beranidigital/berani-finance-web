@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Company\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Rules\PublicHttpUrl;
 use App\Services\AiConfigurationService;
 use App\Support\Ai\AiDriverFactory;
 use App\Support\Ai\AiException;
@@ -69,7 +70,7 @@ class CompanyAiConfigurationController extends Controller
         $this->validate($request, [
             'ai_driver' => 'required|string',
             'ai_api_key' => 'nullable|string',
-            'ai_base_url' => 'nullable|string|url',
+            'ai_base_url' => ['nullable', 'string', 'url', new PublicHttpUrl],
         ]);
 
         $apiKey = $request->input('ai_api_key');

@@ -58,6 +58,12 @@ class GetCompanyStatsTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        // Cross-entity financial snapshot — gated like the company dashboard.
+        return ['dashboard', null];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $period = (string) ($arguments['period'] ?? 'this_month');

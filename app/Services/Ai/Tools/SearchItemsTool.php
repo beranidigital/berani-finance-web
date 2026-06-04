@@ -39,6 +39,11 @@ class SearchItemsTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-item', Item::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $limit = min((int) ($arguments['limit'] ?? self::DEFAULT_LIMIT), self::MAX_LIMIT);

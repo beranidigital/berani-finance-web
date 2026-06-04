@@ -3,6 +3,7 @@
 namespace App\Services\Storage;
 
 use App\Models\FileDisk;
+use App\Support\Net\PrivateNetworkGuard;
 use Illuminate\Http\Request;
 
 class FileDiskService
@@ -103,6 +104,15 @@ class FileDiskService
 
     public function validateCredentials(array $credentials, string $driver): bool
     {
+        // SSRF guard: reject S3/Spaces (or any) endpoints that resolve to a
+        // private or reserved host before we make a live request to them.
+        if (isset($credentials['endpoint'])
+            && is_string($credentials['endpoint'])
+            && $credentials['endpoint'] !== ''
+            && PrivateNetworkGuard::blockedReason($credentials['endpoint']) !== null) {
+            return false;
+        }
+
         // Create a temporary disk config for validation
         $baseConfig = config('filesystems.disks.'.$driver, []);
 

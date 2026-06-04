@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Rules\PublicHttpUrl;
 use App\Services\AiConfigurationService;
 use App\Support\Ai\AiDriverFactory;
 use App\Support\Ai\AiException;
@@ -86,7 +87,7 @@ class AiConfigurationController extends Controller
         $this->validate($request, [
             'ai_driver' => 'required|string',
             'ai_api_key' => 'nullable|string',
-            'ai_base_url' => 'nullable|string|url',
+            'ai_base_url' => ['nullable', 'string', 'url', new PublicHttpUrl],
         ]);
 
         // If the masked placeholder was submitted, fall back to the stored key

@@ -55,6 +55,11 @@ class SearchInvoicesTool extends AiTool
         ];
     }
 
+    public function requiredAbility(): ?array
+    {
+        return ['view-invoice', Invoice::class];
+    }
+
     public function execute(array $arguments, int $companyId, int $userId): mixed
     {
         $limit = min((int) ($arguments['limit'] ?? self::DEFAULT_LIMIT), self::MAX_LIMIT);
