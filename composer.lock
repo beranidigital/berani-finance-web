@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "df856db1b42a7e244e298e6c129c2cba",
+    "content-hash": "bc1914fedd271f614d922d716ab0e3be",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -1730,16 +1730,16 @@
         },
         {
             "name": "invoiceshelf/modules",
-            "version": "3.0.1",
+            "version": "3.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/InvoiceShelf/modules.git",
-                "reference": "f8184d400cdeb1bcc2ea5e6ed926f4e7b8433570"
+                "reference": "9e508914ca64839ef1a1c7d749cc677342dae648"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/InvoiceShelf/modules/zipball/f8184d400cdeb1bcc2ea5e6ed926f4e7b8433570",
-                "reference": "f8184d400cdeb1bcc2ea5e6ed926f4e7b8433570",
+                "url": "https://api.github.com/repos/InvoiceShelf/modules/zipball/9e508914ca64839ef1a1c7d749cc677342dae648",
+                "reference": "9e508914ca64839ef1a1c7d749cc677342dae648",
                 "shasum": ""
             },
             "require": {
@@ -1764,7 +1764,19 @@
                     "InvoiceShelf\\Modules\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "InvoiceShelf\\Modules\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "vendor/bin/phpunit"
+                ],
+                "lint": [
+                    "vendor/bin/pint"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -1775,9 +1787,10 @@
                 "modules"
             ],
             "support": {
-                "source": "https://github.com/InvoiceShelf/modules/tree/3.0.1"
+                "source": "https://github.com/InvoiceShelf/modules/tree/3.0.3",
+                "issues": "https://github.com/InvoiceShelf/modules/issues"
             },
-            "time": "2026-04-08T22:07:27+00:00"
+            "time": "2026-06-05T00:06:47+00:00"
         },
         {
             "name": "laravel/framework",
