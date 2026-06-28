@@ -2,9 +2,13 @@
 
 namespace Modules\Accounting\Providers;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use InvoiceShelf\Modules\Registry as ModuleRegistry;
 use InvoiceShelf\Modules\Support\ModuleServiceProvider;
+use Modules\Accounting\Models\Account;
+use Modules\Accounting\Policies\AccountingPolicy;
+use Silber\Bouncer\BouncerFacade;
 
 class AccountingServiceProvider extends ModuleServiceProvider
 {
@@ -21,6 +25,11 @@ class AccountingServiceProvider extends ModuleServiceProvider
         parent::boot();
 
         $slug = Str::kebab($this->name);
+
+        // Register policy and ability
+        Gate::policy(Account::class, AccountingPolicy::class);
+        BouncerFacade::allow('owner')->to('manage-accounting');
+        BouncerFacade::allow('super admin')->to('manage-accounting');
 
         ModuleRegistry::registerScript(
             $slug,
@@ -71,6 +80,12 @@ class AccountingServiceProvider extends ModuleServiceProvider
                                 'cash' => 'Cash basis',
                                 'accrual' => 'Accrual basis',
                             ],
+                        ],
+                        [
+                            'key' => 'default_expense_account',
+                            'type' => 'number',
+                            'label' => $this->nameLower.'::settings.default_expense_account',
+                            'default' => null,
                         ],
                         [
                             'key' => 'fiscal_year_start',
