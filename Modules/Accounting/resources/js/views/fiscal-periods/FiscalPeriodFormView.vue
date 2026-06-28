@@ -13,10 +13,16 @@
       <div class="p-6">
         <form @submit.prevent="handleSubmit">
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <BaseInput v-model="form.name" label="Period Name" required />
+            <BaseInputGroup label="Period Name" required>
+              <BaseInput v-model="form.name" required />
+            </BaseInputGroup>
             <div></div>
-            <BaseDatePicker v-model="form.start_date" label="Start Date" required />
-            <BaseDatePicker v-model="form.end_date" label="End Date" required />
+            <BaseInputGroup label="Start Date" required>
+              <BaseDatePicker v-model="form.start_date" required />
+            </BaseInputGroup>
+            <BaseInputGroup label="End Date" required>
+              <BaseDatePicker v-model="form.end_date" required />
+            </BaseInputGroup>
           </div>
           <div class="mt-6 flex gap-3">
             <BaseButton type="submit" variant="primary" :loading="submitting">{{ isEdit ? 'Update' : 'Create' }}</BaseButton>
@@ -28,7 +34,7 @@
   </BasePage>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useFiscalPeriodStore } from '../../stores/fiscal-period.store'

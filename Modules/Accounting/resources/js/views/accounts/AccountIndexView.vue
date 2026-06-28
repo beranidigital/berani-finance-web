@@ -37,10 +37,10 @@
             </router-link>
           </template>
           <template #cell-type="{ row }">
-            <BaseBadge :variant="typeVariant(row.type)">{{ row.type }}</BaseBadge>
+            <span class="px-2 py-1 text-sm font-normal uppercase rounded" :class="typeClass(row.type)">{{ row.type }}</span>
           </template>
           <template #cell-balance="{ row }">
-            <span class="text-sm" :class="row.net_balance >= 0 ? 'text-green-600' : 'text-red-600'">
+            <span class="text-sm" :class="row.net_balance >= 0 ? 'text-status-green' : 'text-status-red'">
               {{ formatMoney(row.net_balance) }}
             </span>
           </template>
@@ -50,21 +50,21 @@
               <BaseButton v-if="!row.is_system" size="sm" variant="danger" @click="confirmDelete(row)">Delete</BaseButton>
             </div>
           </template>
-        </DataTable>
+        </BaseTable>
       </div>
     </BaseCard>
 
-    <BaseDialog />
   </BasePage>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAccountStore } from '../../stores/account.store'
 import { useDialogStore } from '@/scripts/stores/dialog.store'
 import { useNotificationStore } from '@/scripts/stores/notification.store'
 import { useCurrency } from '@/scripts/composables/use-currency'
+import type { Account } from '../../services/account.service'
 
 const router = useRouter()
 const accountStore = useAccountStore()
@@ -83,16 +83,16 @@ const columns = [
   { key: 'actions', label: '', sortable: false },
 ]
 
-function typeVariant(type) {
-  const variants = { asset: 'blue', liability: 'yellow', equity: 'purple', revenue: 'green', expense: 'red' }
-  return variants[type] || 'gray'
+const typeClass = (type: Account['type']): string => {
+  const variants: Record<string, string> = { asset: 'bg-blue-100 text-blue-800', liability: 'bg-yellow-100 text-yellow-800', equity: 'bg-purple-100 text-purple-800', revenue: 'bg-green-100 text-green-800', expense: 'bg-red-100 text-red-800' }
+  return variants[type] || 'bg-gray-100 text-gray-800'
 }
 
 function editAccount(account) {
   router.push({ name: 'modules.accounting.accounts.edit', params: { id: account.id } })
 }
 
-async function confirmDelete(account) {
+async function confirmDelete(account: Account) {
   const confirmed = await dialogStore.openDialog({
     title: 'Delete Account',
     message: `Are you sure you want to delete "${account.name}"?`,

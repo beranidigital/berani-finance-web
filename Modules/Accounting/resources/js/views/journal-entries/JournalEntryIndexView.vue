@@ -15,11 +15,7 @@
 
     <BaseCard class="mt-6">
       <div class="p-6">
-        <div v-if="loading" class="flex justify-center py-8">
-          <BaseSpinner />
-        </div>
-
-        <DataTable v-else :columns="columns" :data="entries">
+        <BaseTable ref="tableRef" :columns="columns" :data="fetchData">
           <template #cell-entry_number="{ row }">
             <router-link
               :to="{ name: 'modules.accounting.journal-entries.show', params: { id: row.id } }"
@@ -33,9 +29,9 @@
             <span class="text-sm text-heading">{{ row.description }}</span>
           </template>
           <template #cell-balanced="{ row }">
-            <BaseBadge :variant="row.is_balanced ? 'green' : 'red'">
+            <span class="px-2 py-1 text-sm font-normal uppercase rounded" :class="row.is_balanced ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
               {{ row.is_balanced ? 'Balanced' : 'Unbalanced' }}
-            </BaseBadge>
+            </span>
           </template>
           <template #cell-debits="{ row }">
             <span class="font-mono text-sm">{{ formatMoney(row.debits_total) }}</span>
@@ -43,36 +39,24 @@
           <template #cell-credits="{ row }">
             <span class="font-mono text-sm">{{ formatMoney(row.credits_total) }}</span>
           </template>
-        </DataTable>
-
-        <TablePagination
-          v-if="lastPage > 1"
-          :current-page="currentPage"
-          :last-page="lastPage"
-          :total="total"
-          @page-changed="changePage"
-          class="mt-4"
-        />
+        </BaseTable>
       </div>
     </BaseCard>
   </BasePage>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useJournalEntryStore } from '../../stores/journal-entry.store'
 import { useCurrency } from '@/scripts/composables/use-currency'
+import type { JournalEntry } from '../../services/journal-entry.service'
 
 const router = useRouter()
 const store = useJournalEntryStore()
 const { formatMoney } = useCurrency()
 
-const loading = ref(true)
-const entries = computed(() => store.entries)
-const currentPage = computed(() => store.currentPage)
-const lastPage = computed(() => store.lastPage)
-const total = computed(() => store.total)
+const tableRef = ref<{ refresh: () => void } | null>(null)
 
 const columns = [
   { key: 'entry_number', label: 'Entry #', sortable: false },
@@ -83,12 +67,16 @@ const columns = [
   { key: 'credits', label: 'Total Credits', sortable: false },
 ]
 
-function changePage(page) {
-  store.fetchEntries(page)
+async function fetchData({ page, sort }: { page: number; sort: { fieldName: string; order: string } }) {
+  const response = await store.fetchEntries(page)
+  return {
+    data: store.entries,
+    pagination: {
+      totalPages: store.lastPage,
+      currentPage: store.currentPage,
+      totalCount: store.total,
+      limit: 25,
+    },
+  }
 }
-
-onMounted(async () => {
-  await store.fetchEntries()
-  loading.value = false
-})
 </script>

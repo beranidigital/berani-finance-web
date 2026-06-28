@@ -12,13 +12,13 @@ import BudgetIndexView from './views/budgets/BudgetIndexView.vue'
 import BudgetFormView from './views/budgets/BudgetFormView.vue'
 
 window.InvoiceShelf.booting((_app, router) => {
-  const meta = { requiresAuth: true }
+  const meta = { requiresAuth: true, ability: 'manage-accounting' }
 
   router.addRoute('admin', {
     path: 'modules/accounting/dashboard',
     name: 'modules.accounting.dashboard',
     component: DashboardPage,
-    meta,
+    meta: { requiresAuth: true },
   })
 
   // Chart of Accounts

@@ -25,14 +25,14 @@
         <div class="p-4">
           <p class="text-sm text-muted">Type</p>
           <p class="mt-1">
-            <BaseBadge :variant="typeVariant(account?.type)">{{ account?.type }}</BaseBadge>
+            <span class="px-2 py-1 text-sm font-normal uppercase rounded" :class="typeClass(account?.type)">{{ account?.type }}</span>
           </p>
         </div>
       </BaseCard>
       <BaseCard>
         <div class="p-4">
           <p class="text-sm text-muted">Net Balance</p>
-          <p class="mt-1 text-lg font-semibold" :class="(account?.net_balance ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'">
+          <p class="mt-1 text-lg font-semibold" :class="(account?.net_balance ?? 0) >= 0 ? 'text-status-green' : 'text-status-red'">
             {{ account ? formatMoney(account.net_balance) : '-' }}
           </p>
         </div>
@@ -45,10 +45,10 @@
         <div v-if="loadingLedger" class="flex justify-center py-4">
           <BaseSpinner />
         </div>
-        <DataTable v-else :columns="ledgerColumns" :data="ledgerEntries">
+        <BaseTable v-else :columns="ledgerColumns" :data="ledgerEntries">
           <template #cell-date="{ row }">{{ row.date }}</template>
           <template #cell-type="{ row }">
-            <BaseBadge :variant="row.type === 'debit' ? 'red' : 'green'">{{ row.type }}</BaseBadge>
+            <span class="px-2 py-1 text-sm font-normal uppercase rounded" :class="row.type === 'debit' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">{{ row.type }}</span>
           </template>
           <template #cell-amount="{ row }">
             <span class="font-mono">{{ formatMoney(row.amount) }}</span>
@@ -56,18 +56,19 @@
           <template #cell-balance="{ row }">
             <span class="font-mono">{{ formatMoney(row.running_balance) }}</span>
           </template>
-        </DataTable>
+        </BaseTable>
       </div>
     </BaseCard>
   </BasePage>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAccountStore } from '../../stores/account.store'
 import { useCurrency } from '@/scripts/composables/use-currency'
 import apiClient from '@/scripts/api/client'
+import type { Account } from '../../services/account.service'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,7 +76,7 @@ const accountStore = useAccountStore()
 const { formatMoney } = useCurrency()
 
 const account = computed(() => accountStore.accounts.find((a) => a.id === Number(route.params.id)))
-const ledgerEntries = ref([])
+const ledgerEntries = ref<any[]>([])
 const loadingLedger = ref(true)
 
 const ledgerColumns = [
@@ -85,9 +86,9 @@ const ledgerColumns = [
   { key: 'balance', label: 'Running Balance', sortable: false },
 ]
 
-function typeVariant(type) {
-  const variants = { asset: 'blue', liability: 'yellow', equity: 'purple', revenue: 'green', expense: 'red' }
-  return variants[type] || 'gray'
+const typeClass = (type: Account['type'] | undefined): string => {
+  const variants: Record<string, string> = { asset: 'bg-blue-100 text-blue-800', liability: 'bg-yellow-100 text-yellow-800', equity: 'bg-purple-100 text-purple-800', revenue: 'bg-green-100 text-green-800', expense: 'bg-red-100 text-red-800' }
+  return variants[type || ''] || 'bg-gray-100 text-gray-800'
 }
 
 onMounted(async () => {

@@ -36,9 +36,9 @@
           <div class="p-4">
             <p class="text-sm text-muted">Status</p>
             <p class="mt-1">
-              <BaseBadge :variant="entry.is_balanced ? 'green' : 'red'">
+              <span class="px-2 py-1 text-sm font-normal uppercase rounded" :class="entry.is_balanced ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
                 {{ entry.is_balanced ? 'Balanced' : 'Unbalanced' }}
-              </BaseBadge>
+              </span>
             </p>
           </div>
         </BaseCard>
@@ -69,7 +69,7 @@
                 <td class="py-2 pr-4 text-heading">{{ line.account_name }}</td>
                 <td class="py-2 pr-4 font-mono text-muted">{{ line.account_code }}</td>
                 <td class="py-2 pr-4">
-                  <BaseBadge :variant="line.type === 'debit' ? 'red' : 'green'">{{ line.type }}</BaseBadge>
+                  <span class="px-2 py-1 text-sm font-normal uppercase rounded" :class="line.type === 'debit' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">{{ line.type }}</span>
                 </td>
                 <td class="py-2 pr-4 text-right font-mono">{{ formatMoney(line.amount) }}</td>
                 <td class="py-2 text-muted">{{ line.description || '-' }}</td>
@@ -91,13 +91,11 @@
         </div>
       </BaseCard>
     </template>
-
-    <BaseDialog />
   </BasePage>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { journalEntryService } from '../../services/journal-entry.service'
 import { useJournalEntryStore } from '../../stores/journal-entry.store'
@@ -112,7 +110,7 @@ const dialogStore = useDialogStore()
 const notificationStore = useNotificationStore()
 const { formatMoney } = useCurrency()
 
-const entry = ref(null)
+const entry = ref<any>(null)
 
 async function confirmReverse() {
   const confirmed = await dialogStore.openDialog({
@@ -122,17 +120,17 @@ async function confirmReverse() {
   })
   if (confirmed) {
     try {
-      await store.reverseEntry(route.params.id)
+      await store.reverseEntry(Number(route.params.id))
       await loadEntry()
       notificationStore.showNotification({ type: 'success', message: 'Entry reversed' })
-    } catch (e) {
+    } catch (e: any) {
       notificationStore.showNotification({ type: 'error', message: e.response?.data?.message || 'Reverse failed' })
     }
   }
 }
 
 async function loadEntry() {
-  const response = await journalEntryService.get(route.params.id)
+  const response = await journalEntryService.get(Number(route.params.id))
   entry.value = response.data
 }
 

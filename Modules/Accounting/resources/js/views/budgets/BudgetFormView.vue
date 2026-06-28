@@ -13,9 +13,15 @@
       <div class="p-6">
         <form @submit.prevent="handleSubmit">
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <BaseSelectInput v-model="form.fiscal_period_id" label="Fiscal Period" :options="periodOptions" required />
-            <BaseSelectInput v-model="form.account_id" label="Account" :options="accountOptions" required />
-            <BaseInput v-model.number="form.amount" label="Budget Amount (in cents)" type="number" min="0" required />
+            <BaseInputGroup label="Fiscal Period" required>
+              <BaseSelectInput v-model="form.fiscal_period_id" :options="periodOptions" required />
+            </BaseInputGroup>
+            <BaseInputGroup label="Account" required>
+              <BaseSelectInput v-model="form.account_id" :options="accountOptions" required />
+            </BaseInputGroup>
+            <BaseInputGroup label="Budget Amount" required>
+              <BaseInput v-model="form.amount" type="number" min="0" step="0.01" required />
+            </BaseInputGroup>
           </div>
           <div class="mt-6 flex gap-3">
             <BaseButton type="submit" variant="primary" :loading="submitting">{{ isEdit ? 'Update' : 'Create' }}</BaseButton>
@@ -27,7 +33,7 @@
   </BasePage>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useBudgetStore } from '../../stores/budget.store'
@@ -44,8 +50,8 @@ const isEdit = computed(() => !!route.params.id)
 const submitting = ref(false)
 
 const form = ref({
-  fiscal_period_id: null,
-  account_id: null,
+  fiscal_period_id: null as number | null,
+  account_id: null as number | null,
   amount: 0,
 })
 
@@ -55,7 +61,7 @@ const accountOptions = computed(() => accountStore.accounts.map((a) => ({ value:
 async function handleSubmit() {
   submitting.value = true
   try {
-    const payload = { ...form.value, amount: Math.round(Number(form.value.amount)) }
+    const payload = { ...form.value, amount: Math.round(Number(form.value.amount) * 100) }
     if (isEdit.value) {
       await store.updateBudget(Number(route.params.id), payload)
     } else {
@@ -75,7 +81,7 @@ onMounted(async () => {
   if (isEdit.value) {
     const b = store.budgets.find((x) => x.id === Number(route.params.id))
     if (b) {
-      form.value = { fiscal_period_id: b.fiscal_period_id, account_id: b.account_id, amount: b.amount }
+      form.value = { fiscal_period_id: b.fiscal_period_id, account_id: b.account_id, amount: b.amount / 100 }
     }
   }
 })

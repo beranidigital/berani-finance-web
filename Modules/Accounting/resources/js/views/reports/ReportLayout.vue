@@ -19,14 +19,14 @@
           </div>
           <div v-if="tbLoading" class="flex justify-center py-8"><BaseSpinner /></div>
           <template v-else-if="tbData">
-            <DataTable :columns="tbColumns" :data="tbData.rows">
+            <BaseTable :columns="tbColumns" :data="tbData.rows">
               <template #cell-debit="{ row }"><span class="font-mono">{{ formatMoney(row.debit) }}</span></template>
               <template #cell-credit="{ row }"><span class="font-mono">{{ formatMoney(row.credit) }}</span></template>
-            </DataTable>
+            </BaseTable>
             <div class="mt-4 flex gap-6 text-sm font-semibold">
               <span>Total Debits: <span class="font-mono">{{ formatMoney(tbData.total_debits) }}</span></span>
               <span>Total Credits: <span class="font-mono">{{ formatMoney(tbData.total_credits) }}</span></span>
-              <span :class="tbData.difference === 0 ? 'text-green-600' : 'text-red-600'">
+              <span :class="tbData.difference === 0 ? 'text-status-green' : 'text-status-red'">
                 Difference: <span class="font-mono">{{ formatMoney(tbData.difference) }}</span>
               </span>
             </div>
@@ -94,7 +94,7 @@
               </table>
             </section>
             <div class="text-sm font-semibold">
-              <span>Net Income: <span class="font-mono" :class="isData.net_income >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatMoney(isData.net_income) }}</span></span>
+              <span>Net Income: <span class="font-mono" :class="isData.net_income >= 0 ? 'text-status-green' : 'text-status-red'">{{ formatMoney(isData.net_income) }}</span></span>
             </div>
           </template>
         </div>
@@ -108,7 +108,7 @@
           <div v-if="cfLoading" class="flex justify-center py-8"><BaseSpinner /></div>
           <div v-else-if="cfData" class="text-sm space-y-2">
             <p>Operating: <span class="font-mono font-semibold">{{ formatMoney(cfData.operating?.total) }}</span></p>
-            <p>Net Change: <span class="font-mono font-semibold" :class="cfData.net_change >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatMoney(cfData.net_change) }}</span></p>
+            <p>Net Change: <span class="font-mono font-semibold" :class="cfData.net_change >= 0 ? 'text-status-green' : 'text-status-red'">{{ formatMoney(cfData.net_change) }}</span></p>
           </div>
         </div>
 
@@ -140,7 +140,7 @@
   </BasePage>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useCurrency } from '@/scripts/composables/use-currency'
 import { reportService } from '../../services/report.service'
@@ -158,29 +158,29 @@ const tabs = [
 ]
 
 const tbDate = ref(new Date().toISOString().split('T')[0])
-const tbData = ref(null)
+const tbData = ref<any>(null)
 const tbLoading = ref(false)
 
 const bsDate = ref(new Date().toISOString().split('T')[0])
-const bsData = ref(null)
+const bsData = ref<any>(null)
 const bsLoading = ref(false)
 
 const isStartDate = ref(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0])
 const isEndDate = ref(new Date().toISOString().split('T')[0])
-const isData = ref(null)
+const isData = ref<any>(null)
 const isLoading = ref(false)
 
 const cfStartDate = ref(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0])
 const cfEndDate = ref(new Date().toISOString().split('T')[0])
-const cfData = ref(null)
+const cfData = ref<any>(null)
 const cfLoading = ref(false)
 
 const arDate = ref(new Date().toISOString().split('T')[0])
-const arData = ref(null)
+const arData = ref<any>(null)
 const arLoading = ref(false)
 
 const apDate = ref(new Date().toISOString().split('T')[0])
-const apData = ref(null)
+const apData = ref<any>(null)
 const apLoading = ref(false)
 
 const tbColumns = [

@@ -13,10 +13,14 @@
       <div class="p-6">
         <form @submit.prevent="handleSubmit">
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <BaseDatePicker v-model="form.date" label="Date" required />
+            <BaseInputGroup label="Date" required>
+              <BaseDatePicker v-model="form.date" required />
+            </BaseInputGroup>
             <div></div>
             <div class="md:col-span-2">
-              <BaseInput v-model="form.description" label="Description" required />
+              <BaseInputGroup label="Description" required>
+                <BaseInput v-model="form.description" required />
+              </BaseInputGroup>
             </div>
           </div>
 
@@ -41,14 +45,14 @@
                     <BaseSelectInput v-model="line.type" :options="typeOptions" required />
                   </td>
                   <td class="py-2 pr-4">
-                    <BaseInput v-model.number="line.amount" type="number" min="1" class="text-right" required />
+                    <BaseInput v-model="inputAmounts[index]" type="number" min="0" step="0.01" class="text-right" @update:model-value="setLineAmount(index, $event)" required />
                   </td>
                   <td class="py-2 pr-4">
                     <BaseInput v-model="line.description" placeholder="Optional" />
                   </td>
                   <td class="py-2">
                     <BaseButton size="sm" variant="danger" @click="removeLine(index)" v-if="form.lines.length > 2">
-                      X
+                      <BaseIcon name="XMarkIcon" class="h-4 w-4" />
                     </BaseButton>
                   </td>
                 </tr>
@@ -71,7 +75,7 @@
             </div>
             <div class="flex items-center gap-2">
               <span class="text-muted">Difference:</span>
-              <span class="font-semibold font-mono" :class="difference === 0 ? 'text-green-600' : 'text-red-600'">
+              <span class="font-semibold font-mono" :class="difference === 0 ? 'text-status-green' : 'text-status-red'">
                 {{ formatMoney(difference) }}
               </span>
             </div>
@@ -89,7 +93,7 @@
   </BasePage>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useJournalEntryStore } from '../../stores/journal-entry.store'
@@ -107,10 +111,12 @@ const form = ref({
   date: new Date().toISOString().split('T')[0],
   description: '',
   lines: [
-    { account_id: null, type: 'debit', amount: 0, description: '' },
-    { account_id: null, type: 'credit', amount: 0, description: '' },
+    { account_id: null as number | null, type: 'debit', amount: 0, description: '' },
+    { account_id: null as number | null, type: 'credit', amount: 0, description: '' },
   ],
 })
+
+const inputAmounts = ref(['', ''])
 
 const typeOptions = [
   { value: 'debit', label: 'Debit' },
@@ -124,16 +130,23 @@ const accountOptions = computed(() => {
   }))
 })
 
-const totalDebits = computed(() => form.value.lines.filter((l) => l.type === 'debit').reduce((s, l) => s + (Number(l.amount) || 0), 0))
-const totalCredits = computed(() => form.value.lines.filter((l) => l.type === 'credit').reduce((s, l) => s + (Number(l.amount) || 0), 0))
+const totalDebits = computed(() => form.value.lines.filter((l) => l.type === 'debit').reduce((s, l) => s + l.amount, 0))
+const totalCredits = computed(() => form.value.lines.filter((l) => l.type === 'credit').reduce((s, l) => s + l.amount, 0))
 const difference = computed(() => totalDebits.value - totalCredits.value)
 
-function addLine() {
-  form.value.lines.push({ account_id: null, type: 'debit', amount: 0, description: '' })
+function setLineAmount(index: number, value: string) {
+  form.value.lines[index].amount = Math.round(parseFloat(value || '0') * 100)
 }
 
-function removeLine(index) {
+function addLine() {
+  const idx = form.value.lines.length
+  form.value.lines.push({ account_id: null, type: 'debit', amount: 0, description: '' })
+  inputAmounts.value.push('')
+}
+
+function removeLine(index: number) {
   form.value.lines.splice(index, 1)
+  inputAmounts.value.splice(index, 1)
 }
 
 async function handleSubmit() {
@@ -143,9 +156,9 @@ async function handleSubmit() {
       date: form.value.date,
       description: form.value.description,
       lines: form.value.lines.map((l) => ({
-        account_id: l.account_id,
+        account_id: l.account_id!,
         type: l.type,
-        amount: Math.round(Number(l.amount) * 100),
+        amount: l.amount,
         description: l.description || null,
       })),
     })
