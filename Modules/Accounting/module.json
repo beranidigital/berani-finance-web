@@ -1,0 +1,11 @@
+{
+    "name": "Accounting",
+    "alias": "accounting",
+    "description": "Double-entry accounting module for InvoiceShelf",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Accounting\\Providers\\AccountingServiceProvider"
+    ],
+    "files": []
+}

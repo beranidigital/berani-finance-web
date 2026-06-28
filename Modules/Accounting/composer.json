@@ -1,0 +1,33 @@
+{
+    "name": "invoiceshelf/accounting",
+    "description": "Double-entry accounting module for InvoiceShelf",
+    "authors": [
+        {
+            "name": "Berani Finance",
+            "email": "hello@berani.finance"
+        }
+    ],
+    "require": {
+        "invoiceshelf/modules": "^3.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Accounting\\": "app/",
+            "Modules\\Accounting\\Database\\Factories\\": "database/factories/",
+            "Modules\\Accounting\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Accounting\\Tests\\": "tests/"
+        }
+    }
+}
