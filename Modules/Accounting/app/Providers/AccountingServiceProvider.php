@@ -31,6 +31,12 @@ class AccountingServiceProvider extends ModuleServiceProvider
         BouncerFacade::allow('owner')->to('manage-accounting');
         BouncerFacade::allow('super admin')->to('manage-accounting');
 
+        // Register console commands
+        $this->commands([
+            \Modules\Accounting\Console\Commands\CheckAccountingIntegrity::class,
+            \Modules\Accounting\Console\Commands\RepairAccountingEntries::class,
+        ]);
+
         ModuleRegistry::registerScript(
             $slug,
             module_path($this->name, 'resources/dist/init.js')
