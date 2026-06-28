@@ -9,5 +9,6 @@ return [
     'accounting_method' => 'Accounting method',
     'accounting_method_cash' => 'Cash basis',
     'accounting_method_accrual' => 'Accrual basis',
+    'default_expense_account' => 'Default Expense account',
     'fiscal_year_start' => 'Fiscal year start month',
 ];
