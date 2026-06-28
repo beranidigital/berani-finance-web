@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Support\SafeOrderBy;
+use App\Events\ExpenseRecorded;
+use App\Traits\HasAccountingHooks;
 use App\Traits\HasCustomFieldsTrait;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -18,9 +20,17 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Expense extends Model implements HasMedia
 {
+    use HasAccountingHooks;
     use HasCustomFieldsTrait;
     use HasFactory;
     use InteractsWithMedia;
+
+    protected static function booted()
+    {
+        static::created(function ($expense) {
+            ExpenseRecorded::dispatch($expense, $expense->company_id);
+        });
+    }
 
     protected $dates = [
         'expense_date',

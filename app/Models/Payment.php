@@ -6,7 +6,10 @@ use App\Jobs\GeneratePaymentPdfJob;
 use App\Services\Document\PaymentService;
 use App\Support\Pdf\PdfHtmlSanitizer;
 use App\Support\SafeOrderBy;
+use App\Events\PaymentReceived;
+use App\Events\PaymentRefunded;
 use App\Traits\GeneratesPdfTrait;
+use App\Traits\HasAccountingHooks;
 use App\Traits\HasCustomFieldsTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +22,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Payment extends Model implements HasMedia
 {
     use GeneratesPdfTrait;
+    use HasAccountingHooks;
     use HasCustomFieldsTrait;
     use HasFactory;
     use InteractsWithMedia;
@@ -45,10 +49,15 @@ class Payment extends Model implements HasMedia
     {
         static::created(function ($payment) {
             GeneratePaymentPdfJob::dispatch($payment);
+            PaymentReceived::dispatch($payment, $payment->company_id);
         });
 
         static::updated(function ($payment) {
             GeneratePaymentPdfJob::dispatch($payment, true);
+        });
+
+        static::deleted(function ($payment) {
+            PaymentRefunded::dispatch($payment, $payment->company_id);
         });
     }
 

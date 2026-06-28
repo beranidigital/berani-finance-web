@@ -7,6 +7,7 @@ use App\Support\Pdf\PdfHtmlSanitizer;
 use App\Support\Pdf\PdfTemplateUtils;
 use App\Support\SafeOrderBy;
 use App\Traits\GeneratesPdfTrait;
+use App\Traits\HasAccountingHooks;
 use App\Traits\HasCustomFieldsTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Estimate extends Model implements HasMedia
 {
     use GeneratesPdfTrait;
+    use HasAccountingHooks;
     use HasCustomFieldsTrait;
     use HasFactory;
     use InteractsWithMedia;
