@@ -32,6 +32,7 @@ it('creates a balanced journal entry', function () {
         companyId: $this->companyId,
         date: '2026-01-15',
         description: 'Test entry',
+        createdBy: 1,
         lines: [
             ['account_id' => $this->accountAsset->id, 'type' => 'debit', 'amount' => 10000, 'description' => null],
             ['account_id' => $this->accountRevenue->id, 'type' => 'credit', 'amount' => 10000, 'description' => null],
@@ -52,6 +53,7 @@ it('throws exception for unbalanced entry', function () {
         companyId: $this->companyId,
         date: '2026-01-15',
         description: 'Unbalanced entry',
+        createdBy: 1,
         lines: [
             ['account_id' => $this->accountAsset->id, 'type' => 'debit', 'amount' => 10000, 'description' => null],
             ['account_id' => $this->accountRevenue->id, 'type' => 'credit', 'amount' => 5000, 'description' => null],
@@ -64,6 +66,7 @@ it('reverses a journal entry', function () {
         companyId: $this->companyId,
         date: '2026-01-15',
         description: 'Original entry',
+        createdBy: 1,
         lines: [
             ['account_id' => $this->accountAsset->id, 'type' => 'debit', 'amount' => 10000, 'description' => null],
             ['account_id' => $this->accountRevenue->id, 'type' => 'credit', 'amount' => 10000, 'description' => null],
@@ -85,6 +88,7 @@ it('auto-increments entry numbers', function () {
         companyId: $this->companyId,
         date: '2026-01-15',
         description: 'First entry',
+        createdBy: 1,
         lines: [
             ['account_id' => $this->accountAsset->id, 'type' => 'debit', 'amount' => 100, 'description' => null],
             ['account_id' => $this->accountRevenue->id, 'type' => 'credit', 'amount' => 100, 'description' => null],
@@ -95,6 +99,7 @@ it('auto-increments entry numbers', function () {
         companyId: $this->companyId,
         date: '2026-01-16',
         description: 'Second entry',
+        createdBy: 1,
         lines: [
             ['account_id' => $this->accountAsset->id, 'type' => 'debit', 'amount' => 200, 'description' => null],
             ['account_id' => $this->accountRevenue->id, 'type' => 'credit', 'amount' => 200, 'description' => null],

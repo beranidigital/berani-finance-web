@@ -3,9 +3,12 @@
 namespace Modules\Accounting\Providers;
 
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use InvoiceShelf\Modules\Registry as ModuleRegistry;
 use InvoiceShelf\Modules\Support\ModuleServiceProvider;
+use Modules\Accounting\Console\Commands\CheckAccountingIntegrity;
+use Modules\Accounting\Console\Commands\RepairAccountingEntries;
 use Modules\Accounting\Models\Account;
 use Modules\Accounting\Policies\AccountingPolicy;
 use Silber\Bouncer\BouncerFacade;
@@ -13,6 +16,7 @@ use Silber\Bouncer\BouncerFacade;
 class AccountingServiceProvider extends ModuleServiceProvider
 {
     protected string $name = 'Accounting';
+
     protected string $nameLower = 'accounting';
 
     protected array $providers = [
@@ -28,13 +32,18 @@ class AccountingServiceProvider extends ModuleServiceProvider
 
         // Register policy and ability
         Gate::policy(Account::class, AccountingPolicy::class);
-        BouncerFacade::allow('owner')->to('manage-accounting');
-        BouncerFacade::allow('super admin')->to('manage-accounting');
+
+        // Defer Bouncer ability registration — the `abilities` table may not exist
+        // during testing (SQLite :memory: bootstrap), and this spares a boot-time query.
+        if (Schema::hasTable('abilities')) {
+            BouncerFacade::allow('owner')->to('manage-accounting');
+            BouncerFacade::allow('super admin')->to('manage-accounting');
+        }
 
         // Register console commands
         $this->commands([
-            \Modules\Accounting\Console\Commands\CheckAccountingIntegrity::class,
-            \Modules\Accounting\Console\Commands\RepairAccountingEntries::class,
+            CheckAccountingIntegrity::class,
+            RepairAccountingEntries::class,
         ]);
 
         ModuleRegistry::registerScript(

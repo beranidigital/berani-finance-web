@@ -5,6 +5,7 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class)->in('Feature');
 uses(TestCase::class, RefreshDatabase::class)->in('Unit');
+uses(TestCase::class, RefreshDatabase::class)->in('../Modules/Accounting/tests');
 
 // The module-system tests scaffold real modules on disk (Modules/ScaffoldProbe) and
 // toggle the shared modules_statuses.json — global, filesystem-level state that paratest

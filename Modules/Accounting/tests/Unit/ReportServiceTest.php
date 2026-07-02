@@ -18,19 +18,19 @@ beforeEach(function () {
     $this->journalSvc->createEntry($this->companyId, '2026-01-15', 'Invoice', [
         ['account_id' => $this->ar->id, 'type' => 'debit', 'amount' => 100000, 'description' => null],
         ['account_id' => $this->revenue->id, 'type' => 'credit', 'amount' => 100000, 'description' => null],
-    ]);
+    ], createdBy: 1);
 
     // Create a payment entry: Dr Cash 500, Cr AR 500
     $this->journalSvc->createEntry($this->companyId, '2026-01-20', 'Payment', [
         ['account_id' => $this->cash->id, 'type' => 'debit', 'amount' => 50000, 'description' => null],
         ['account_id' => $this->ar->id, 'type' => 'credit', 'amount' => 50000, 'description' => null],
-    ]);
+    ], createdBy: 1);
 
     // Create an expense entry: Dr OpEx 200, Cr Cash 200
     $this->journalSvc->createEntry($this->companyId, '2026-01-25', 'Expense', [
         ['account_id' => $this->expense->id, 'type' => 'debit', 'amount' => 20000, 'description' => null],
         ['account_id' => $this->cash->id, 'type' => 'credit', 'amount' => 20000, 'description' => null],
-    ]);
+    ], createdBy: 1);
 });
 
 it('generates a balanced trial balance', function () {

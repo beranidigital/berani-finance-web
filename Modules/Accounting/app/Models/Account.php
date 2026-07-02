@@ -2,15 +2,22 @@
 
 namespace Modules\Accounting\Models;
 
+use App\Models\Company;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Accounting\Database\Factories\AccountFactory;
 
 class Account extends Model
 {
     use HasFactory;
-{
+
+    protected static function newFactory()
+    {
+        return AccountFactory::new();
+    }
+
     protected $guarded = ['id'];
 
     protected function casts(): array
@@ -23,7 +30,7 @@ class Account extends Model
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Company::class);
+        return $this->belongsTo(Company::class);
     }
 
     public function parent(): BelongsTo

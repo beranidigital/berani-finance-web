@@ -11,11 +11,13 @@ class AccountFactory extends Factory
 
     public function definition(): array
     {
+        $types = ['asset', 'liability', 'equity', 'revenue', 'expense'];
+
         return [
             'company_id' => 1,
-            'name' => $this->faker->word(),
-            'code' => (string) $this->faker->unique()->numberBetween(1000, 9999),
-            'type' => $this->faker->randomElement(['asset', 'liability', 'equity', 'revenue', 'expense']),
+            'name' => fake()->name(),
+            'code' => (string) fake()->unique()->randomNumber(4),
+            'type' => $types[array_rand($types)],
             'is_active' => true,
             'is_system' => false,
         ];
