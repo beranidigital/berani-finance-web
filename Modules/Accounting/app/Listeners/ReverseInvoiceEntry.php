@@ -3,6 +3,7 @@
 namespace Modules\Accounting\Listeners;
 
 use App\Events\FinancialDocumentDeleted;
+use App\Models\Invoice;
 use Modules\Accounting\Services\DocumentPostingService;
 
 class ReverseInvoiceEntry
@@ -13,8 +14,8 @@ class ReverseInvoiceEntry
 
     public function handle(FinancialDocumentDeleted $event): void
     {
-        if ($event->modelType === \App\Models\Invoice::class) {
-            $invoice = \App\Models\Invoice::withTrashed()->find($event->modelId);
+        if ($event->modelType === Invoice::class) {
+            $invoice = Invoice::find($event->modelId);
             if ($invoice) {
                 $this->postingService->reverseInvoice($invoice);
             }

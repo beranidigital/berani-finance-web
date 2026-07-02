@@ -11,11 +11,13 @@ trait HasAccountingHooks
     public static function bootHasAccountingHooks(): void
     {
         static::created(function ($model) {
-            FinancialDocumentCreated::dispatch($model, $model->company_id);
+            if ($model->company_id !== null) {
+                FinancialDocumentCreated::dispatch($model, $model->company_id);
+            }
         });
 
         static::updated(function ($model) {
-            if ($model->wasChanged()) {
+            if ($model->company_id !== null && $model->wasChanged()) {
                 FinancialDocumentUpdated::dispatch(
                     $model,
                     $model->company_id,
@@ -26,12 +28,14 @@ trait HasAccountingHooks
         });
 
         static::deleted(function ($model) {
-            FinancialDocumentDeleted::dispatch(
-                $model,
-                $model->company_id,
-                get_class($model),
-                $model->id,
-            );
+            if ($model->company_id !== null) {
+                FinancialDocumentDeleted::dispatch(
+                    $model,
+                    $model->company_id,
+                    get_class($model),
+                    $model->id,
+                );
+            }
         });
     }
 }

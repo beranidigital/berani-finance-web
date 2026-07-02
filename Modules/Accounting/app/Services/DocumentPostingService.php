@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
 use Modules\Accounting\Models\Account;
+use Modules\Accounting\Models\JournalEntry;
 
 class DocumentPostingService
 {
@@ -19,10 +20,15 @@ class DocumentPostingService
         $arAccountId = $this->getSettingAccount($invoice->company_id, 'default_ar_account', '1200');
         $revenueAccountId = $this->getSettingAccount($invoice->company_id, 'default_revenue_account', '4100');
 
+        if (! $arAccountId || ! $revenueAccountId) {
+            return;
+        }
+
         $this->journalService->createEntry(
             companyId: $invoice->company_id,
             date: $invoice->invoice_date->format('Y-m-d'),
             description: "Invoice {$invoice->invoice_number}",
+            createdBy: $this->getUserId(),
             lines: [
                 [
                     'account_id' => $arAccountId,
@@ -47,10 +53,15 @@ class DocumentPostingService
         $cashAccountId = $this->getSettingAccount($payment->company_id, 'default_cash_account', '1100');
         $arAccountId = $this->getSettingAccount($payment->company_id, 'default_ar_account', '1200');
 
+        if (! $cashAccountId || ! $arAccountId) {
+            return;
+        }
+
         $this->journalService->createEntry(
             companyId: $payment->company_id,
             date: $payment->payment_date->format('Y-m-d'),
             description: "Payment {$payment->payment_number}",
+            createdBy: $this->getUserId(),
             lines: [
                 [
                     'account_id' => $cashAccountId,
@@ -75,10 +86,15 @@ class DocumentPostingService
         $expenseAccountId = $this->getExpenseCategoryAccount($expense);
         $cashAccountId = $this->getSettingAccount($expense->company_id, 'default_cash_account', '1100');
 
+        if (! $expenseAccountId || ! $cashAccountId) {
+            return;
+        }
+
         $this->journalService->createEntry(
             companyId: $expense->company_id,
             date: $expense->expense_date->format('Y-m-d'),
             description: "Expense #{$expense->id}",
+            createdBy: $this->getUserId(),
             lines: [
                 [
                     'account_id' => $expenseAccountId,
@@ -100,7 +116,7 @@ class DocumentPostingService
 
     public function reverseInvoice(Invoice $invoice): void
     {
-        $entry = \Modules\Accounting\Models\JournalEntry::where('company_id', $invoice->company_id)
+        $entry = JournalEntry::where('company_id', $invoice->company_id)
             ->where('reference_type', 'invoice')
             ->where('reference_id', $invoice->id)
             ->first();
@@ -112,7 +128,7 @@ class DocumentPostingService
 
     public function reversePayment(Payment $payment): void
     {
-        $entry = \Modules\Accounting\Models\JournalEntry::where('company_id', $payment->company_id)
+        $entry = JournalEntry::where('company_id', $payment->company_id)
             ->where('reference_type', 'payment')
             ->where('reference_id', $payment->id)
             ->first();
@@ -122,7 +138,7 @@ class DocumentPostingService
         }
     }
 
-    private function getSettingAccount(int $companyId, string $settingKey, string $defaultCode): int
+    private function getSettingAccount(int $companyId, string $settingKey, string $defaultCode): ?int
     {
         $accountId = CompanySetting::getSetting("module.accounting.{$settingKey}", $companyId);
 
@@ -134,12 +150,10 @@ class DocumentPostingService
             ->where('code', $defaultCode)
             ->first();
 
-        return $default ? $default->id : throw new \RuntimeException(
-            "No default account configured for {$settingKey} and default code {$defaultCode} not found."
-        );
+        return $default?->id;
     }
 
-    private function getExpenseCategoryAccount(Expense $expense): int
+    private function getExpenseCategoryAccount(Expense $expense): ?int
     {
         $defaultExpenseAccount = CompanySetting::getSetting(
             'module.accounting.default_expense_account',
@@ -154,8 +168,11 @@ class DocumentPostingService
             ->where('code', '5200')
             ->first();
 
-        return $expenseAccount ? $expenseAccount->id : throw new \RuntimeException(
-            'Default expense account not found.'
-        );
+        return $expenseAccount?->id;
+    }
+
+    private function getUserId(): ?int
+    {
+        return auth()->id();
     }
 }

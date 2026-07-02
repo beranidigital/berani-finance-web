@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Events\PaymentReceived;
+use App\Events\PaymentRefunded;
 use App\Jobs\GeneratePaymentPdfJob;
 use App\Services\Document\PaymentService;
 use App\Support\Pdf\PdfHtmlSanitizer;
 use App\Support\SafeOrderBy;
-use App\Events\PaymentReceived;
-use App\Events\PaymentRefunded;
 use App\Traits\GeneratesPdfTrait;
 use App\Traits\HasAccountingHooks;
 use App\Traits\HasCustomFieldsTrait;

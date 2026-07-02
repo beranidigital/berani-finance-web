@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Support\SafeOrderBy;
 use App\Events\ExpenseRecorded;
+use App\Support\SafeOrderBy;
 use App\Traits\HasAccountingHooks;
 use App\Traits\HasCustomFieldsTrait;
 use Carbon\Carbon;
