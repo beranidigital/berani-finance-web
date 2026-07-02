@@ -12,6 +12,7 @@ use Modules\Accounting\Models\JournalEntry;
 class CheckAccountingIntegrity extends Command
 {
     protected $signature = 'accounting:check {--company= : Company ID to check}';
+
     protected $description = 'Verify every financial document has a corresponding journal entry';
 
     public function handle(): int

@@ -1,16 +1,13 @@
 <?php
 
 use App\Models\Company;
-use App\Models\CompanySetting;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\Expense;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
 use Modules\Accounting\Models\Account;
 use Modules\Accounting\Models\JournalEntry;
 use Modules\Accounting\Services\JournalService;
-use Modules\Accounting\Services\LedgerService;
 
 return new class extends Migration
 {
@@ -68,7 +65,9 @@ return new class extends Migration
     {
         $arId = Account::where('company_id', $invoice->company_id)->where('code', '1200')->first()?->id;
         $revId = Account::where('company_id', $invoice->company_id)->where('code', '4100')->first()?->id;
-        if (! $arId || ! $revId) { return; }
+        if (! $arId || ! $revId) {
+            return;
+        }
 
         $svc->createEntry(
             companyId: $invoice->company_id,
@@ -87,7 +86,9 @@ return new class extends Migration
     {
         $cashId = Account::where('company_id', $payment->company_id)->where('code', '1100')->first()?->id;
         $arId = Account::where('company_id', $payment->company_id)->where('code', '1200')->first()?->id;
-        if (! $cashId || ! $arId) { return; }
+        if (! $cashId || ! $arId) {
+            return;
+        }
 
         $svc->createEntry(
             companyId: $payment->company_id,
@@ -106,7 +107,9 @@ return new class extends Migration
     {
         $expId = Account::where('company_id', $expense->company_id)->where('code', '5200')->first()?->id;
         $cashId = Account::where('company_id', $expense->company_id)->where('code', '1100')->first()?->id;
-        if (! $expId || ! $cashId) { return; }
+        if (! $expId || ! $cashId) {
+            return;
+        }
 
         $svc->createEntry(
             companyId: $expense->company_id,

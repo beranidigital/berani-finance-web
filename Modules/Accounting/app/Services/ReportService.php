@@ -101,6 +101,12 @@ class ReportService
             }
         }
 
+        $netIncome = $this->calculateNetIncome($companyId, $asOfDate);
+        if ($netIncome !== 0) {
+            $equities[] = ['code' => '', 'name' => 'Retained Earnings (Current Period)', 'balance' => $netIncome];
+            $totalEquity += $netIncome;
+        }
+
         return [
             'as_of_date' => $asOfDate,
             'assets' => ['items' => $assets, 'total' => $totalAssets],
@@ -108,6 +114,42 @@ class ReportService
             'equity' => ['items' => $equities, 'total' => $totalEquity],
             'total_liabilities_equity' => $totalLiabilities + $totalEquity,
         ];
+    }
+
+    private function calculateNetIncome(int $companyId, string $asOfDate): int
+    {
+        $incomeAccounts = Account::whereCompany($companyId)
+            ->whereIn('type', ['revenue', 'expense'])
+            ->get()
+            ->keyBy('id');
+
+        $entries = Ledger::where('company_id', $companyId)
+            ->where('date', '<=', $asOfDate)
+            ->select(
+                'account_id',
+                DB::raw("SUM(CASE WHEN type = 'debit' THEN amount ELSE 0 END) as total_debits"),
+                DB::raw("SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END) as total_credits")
+            )
+            ->groupBy('account_id')
+            ->get();
+
+        $totalRevenue = 0;
+        $totalExpenses = 0;
+
+        foreach ($entries as $entry) {
+            $account = $incomeAccounts->get($entry->account_id);
+            if (! $account) {
+                continue;
+            }
+
+            if ($account->type === 'revenue') {
+                $totalRevenue += (int) $entry->total_credits - (int) $entry->total_debits;
+            } elseif ($account->type === 'expense') {
+                $totalExpenses += (int) $entry->total_debits - (int) $entry->total_credits;
+            }
+        }
+
+        return $totalRevenue - $totalExpenses;
     }
 
     public function incomeStatement(int $companyId, string $startDate, string $endDate): array
@@ -202,38 +244,32 @@ class ReportService
         $arAccount = Account::whereCompany($companyId)->where('code', '1200')->first();
 
         if (! $arAccount) {
-            return ['rows' => [], 'as_of_date' => $asOfDate];
+            return ['rows' => [], 'total_ar' => 0, 'as_of_date' => $asOfDate];
         }
 
-        $entries = Ledger::where('company_id', $companyId)
+        $ledgerEntries = Ledger::where('company_id', $companyId)
             ->where('account_id', $arAccount->id)
             ->where('date', '<=', $asOfDate)
             ->orderBy('date')
-            ->get()
-            ->groupBy('journal_entry_id');
+            ->get();
 
         $rows = [];
-        foreach ($entries as $journalEntryId => $ledgerEntries) {
-            $debits = $ledgerEntries->where('type', 'debit')->sum('amount');
-            $credits = $ledgerEntries->where('type', 'credit')->sum('amount');
-            $balance = (int) $debits - (int) $credits;
+        $runningBalance = 0;
 
-            if ($balance <= 0) {
-                continue;
+        foreach ($ledgerEntries as $entry) {
+            if ($entry->type === 'debit') {
+                $runningBalance += (int) $entry->amount;
+            } else {
+                $runningBalance -= (int) $entry->amount;
             }
-
-            $firstEntry = $ledgerEntries->first();
-            $rows[] = [
-                'journal_entry_id' => $journalEntryId,
-                'date' => $firstEntry->date->format('Y-m-d'),
-                'balance' => $balance,
-            ];
         }
+
+        $totalAr = max(0, $runningBalance);
 
         return [
             'as_of_date' => $asOfDate,
             'rows' => $rows,
-            'total_ar' => collect($rows)->sum('balance'),
+            'total_ar' => $totalAr,
         ];
     }
 
@@ -242,38 +278,32 @@ class ReportService
         $apAccount = Account::whereCompany($companyId)->where('code', '2100')->first();
 
         if (! $apAccount) {
-            return ['rows' => [], 'as_of_date' => $asOfDate];
+            return ['rows' => [], 'total_ap' => 0, 'as_of_date' => $asOfDate];
         }
 
-        $entries = Ledger::where('company_id', $companyId)
+        $ledgerEntries = Ledger::where('company_id', $companyId)
             ->where('account_id', $apAccount->id)
             ->where('date', '<=', $asOfDate)
             ->orderBy('date')
-            ->get()
-            ->groupBy('journal_entry_id');
+            ->get();
 
         $rows = [];
-        foreach ($entries as $journalEntryId => $ledgerEntries) {
-            $credits = $ledgerEntries->where('type', 'credit')->sum('amount');
-            $debits = $ledgerEntries->where('type', 'debit')->sum('amount');
-            $balance = (int) $credits - (int) $debits;
+        $runningBalance = 0;
 
-            if ($balance <= 0) {
-                continue;
+        foreach ($ledgerEntries as $entry) {
+            if ($entry->type === 'credit') {
+                $runningBalance += (int) $entry->amount;
+            } else {
+                $runningBalance -= (int) $entry->amount;
             }
-
-            $firstEntry = $ledgerEntries->first();
-            $rows[] = [
-                'journal_entry_id' => $journalEntryId,
-                'date' => $firstEntry->date->format('Y-m-d'),
-                'balance' => $balance,
-            ];
         }
+
+        $totalAp = max(0, $runningBalance);
 
         return [
             'as_of_date' => $asOfDate,
             'rows' => $rows,
-            'total_ap' => collect($rows)->sum('balance'),
+            'total_ap' => $totalAp,
         ];
     }
 }

@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Accounting\Http\Controllers\AccountController;
+use Modules\Accounting\Http\Controllers\BudgetController;
+use Modules\Accounting\Http\Controllers\FiscalPeriodController;
 use Modules\Accounting\Http\Controllers\JournalEntryController;
 use Modules\Accounting\Http\Controllers\LedgerController;
-use Modules\Accounting\Http\Controllers\FiscalPeriodController;
-use Modules\Accounting\Http\Controllers\BudgetController;
 use Modules\Accounting\Http\Controllers\ReportController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {

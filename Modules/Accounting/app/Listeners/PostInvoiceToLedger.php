@@ -3,6 +3,7 @@
 namespace Modules\Accounting\Listeners;
 
 use App\Events\FinancialDocumentCreated;
+use App\Models\Invoice;
 use Modules\Accounting\Services\DocumentPostingService;
 
 class PostInvoiceToLedger
@@ -13,7 +14,7 @@ class PostInvoiceToLedger
 
     public function handle(FinancialDocumentCreated $event): void
     {
-        if ($event->model instanceof \App\Models\Invoice) {
+        if ($event->model instanceof Invoice) {
             $this->postingService->postInvoice($event->model);
         }
     }

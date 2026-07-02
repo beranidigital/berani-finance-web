@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Accounting\Http\Resources\LedgerResource;
-use Modules\Accounting\Models\Account;
 use Modules\Accounting\Models\Ledger;
 
 class LedgerController extends Controller

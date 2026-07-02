@@ -2,6 +2,7 @@
 
 namespace Modules\Accounting\Models;
 
+use App\Models\Company;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,7 +23,7 @@ class FiscalPeriod extends Model
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Company::class);
+        return $this->belongsTo(Company::class);
     }
 
     public function budgets(): HasMany

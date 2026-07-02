@@ -13,6 +13,7 @@ use Modules\Accounting\Services\DocumentPostingService;
 class RepairAccountingEntries extends Command
 {
     protected $signature = 'accounting:repair {--company= : Company ID to repair}';
+
     protected $description = 'Create missing journal entries for existing documents';
 
     public function handle(): int

@@ -70,12 +70,12 @@ class JournalService
 
     public function reverseEntry(JournalEntry $entry): JournalEntry
     {
-        $lines = $entry->lines->map(function ($line) {
+        $lines = $entry->lines->map(function ($line) use ($entry) {
             return [
                 'account_id' => $line->account_id,
                 'type' => $line->type === 'debit' ? 'credit' : 'debit',
                 'amount' => $line->amount,
-                'description' => 'Reversal: ' . ($line->description ?? $entry->description),
+                'description' => 'Reversal: '.($line->description ?? $entry->description),
             ];
         });
 

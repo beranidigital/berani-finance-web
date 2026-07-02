@@ -4,7 +4,6 @@ namespace Modules\Accounting\Policies;
 
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Modules\Accounting\Models\Account;
 
 class AccountingPolicy
 {
