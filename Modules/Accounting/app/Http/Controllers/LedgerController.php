@@ -12,7 +12,7 @@ class LedgerController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $query = Ledger::whereCompany($request->header('company'))
             ->with('account');

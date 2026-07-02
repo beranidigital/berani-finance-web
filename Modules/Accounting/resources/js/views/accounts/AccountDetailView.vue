@@ -67,7 +67,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAccountStore } from '../../stores/account.store'
 import { useCurrency } from '@/scripts/composables/use-currency'
-import apiClient from '@/scripts/api/client'
+import { client as apiClient } from '@/scripts/api/client'
 import type { Account } from '../../services/account.service'
 
 const route = useRoute()

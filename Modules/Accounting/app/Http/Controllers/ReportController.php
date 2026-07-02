@@ -15,7 +15,7 @@ class ReportController extends Controller
 
     public function trialBalance(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $result = $this->reportService->trialBalance(
             companyId: (int) $request->header('company'),
@@ -27,7 +27,7 @@ class ReportController extends Controller
 
     public function balanceSheet(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $result = $this->reportService->balanceSheet(
             companyId: (int) $request->header('company'),
@@ -39,7 +39,7 @@ class ReportController extends Controller
 
     public function incomeStatement(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $result = $this->reportService->incomeStatement(
             companyId: (int) $request->header('company'),
@@ -52,7 +52,7 @@ class ReportController extends Controller
 
     public function cashFlow(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $result = $this->reportService->cashFlow(
             companyId: (int) $request->header('company'),
@@ -65,7 +65,7 @@ class ReportController extends Controller
 
     public function arAging(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $result = $this->reportService->arAging(
             companyId: (int) $request->header('company'),
@@ -77,7 +77,7 @@ class ReportController extends Controller
 
     public function apAging(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $result = $this->reportService->apAging(
             companyId: (int) $request->header('company'),

@@ -24,7 +24,7 @@
           <p class="mt-4 text-sm text-muted">No accounts yet. Create your first account to get started.</p>
         </div>
 
-        <DataTable v-else :columns="columns" :data="accounts">
+        <BaseTable v-else :columns="columns" :data="accounts">
           <template #cell-code="{ row }">
             <span class="font-mono text-sm text-heading">{{ row.code }}</span>
           </template>

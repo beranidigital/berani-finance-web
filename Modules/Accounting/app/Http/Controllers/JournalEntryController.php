@@ -18,7 +18,7 @@ class JournalEntryController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $entries = JournalEntry::whereCompany($request->header('company'))
             ->with('lines.account')
@@ -38,7 +38,7 @@ class JournalEntryController extends Controller
 
     public function store(StoreJournalEntryRequest $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         try {
             $entry = $this->journalService->createEntry(
@@ -58,7 +58,7 @@ class JournalEntryController extends Controller
 
     public function show(Request $request, JournalEntry $journalEntry): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $journalEntry->load('lines.account');
 
@@ -69,7 +69,7 @@ class JournalEntryController extends Controller
 
     public function destroy(Request $request, JournalEntry $journalEntry): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $journalEntry->delete();
 
@@ -78,7 +78,7 @@ class JournalEntryController extends Controller
 
     public function reverse(Request $request, JournalEntry $journalEntry): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         try {
             $reversal = $this->journalService->reverseEntry($journalEntry);

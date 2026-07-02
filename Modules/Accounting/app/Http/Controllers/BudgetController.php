@@ -13,7 +13,7 @@ class BudgetController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $budgets = Budget::whereCompany($request->header('company'))
             ->with(['account', 'fiscalPeriod'])
@@ -27,7 +27,7 @@ class BudgetController extends Controller
 
     public function store(StoreBudgetRequest $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $budget = Budget::create([
             'company_id' => $request->header('company'),
@@ -43,7 +43,7 @@ class BudgetController extends Controller
 
     public function show(Request $request, Budget $budget): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $budget->load(['account', 'fiscalPeriod']);
 
@@ -54,7 +54,7 @@ class BudgetController extends Controller
 
     public function update(StoreBudgetRequest $request, Budget $budget): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $budget->update($request->validated());
 
@@ -65,7 +65,7 @@ class BudgetController extends Controller
 
     public function destroy(Request $request, Budget $budget): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $budget->delete();
 

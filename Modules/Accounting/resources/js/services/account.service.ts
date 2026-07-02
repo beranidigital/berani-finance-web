@@ -1,4 +1,4 @@
-import apiClient from '@/scripts/api/client'
+import { client as apiClient } from '@/scripts/api/client'
 import type { PaginationMeta } from '@/scripts/types/domain/pagination'
 
 export interface Account {

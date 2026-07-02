@@ -8,7 +8,7 @@ class StoreAccountRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('manage accounting');
+        return $this->user()->can('manage-accounting');
     }
 
     public function rules(): array

@@ -19,7 +19,7 @@ class AccountController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $accounts = Account::whereCompany($request->header('company'))
             ->withCount('children')
@@ -33,7 +33,7 @@ class AccountController extends Controller
 
     public function store(StoreAccountRequest $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $account = $this->accountService->create([
             'company_id' => $request->header('company'),
@@ -52,7 +52,7 @@ class AccountController extends Controller
 
     public function show(Request $request, Account $account): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $account->loadCount('children');
 
@@ -63,7 +63,7 @@ class AccountController extends Controller
 
     public function update(UpdateAccountRequest $request, Account $account): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $account = $this->accountService->update($account, $request->validated());
 
@@ -74,7 +74,7 @@ class AccountController extends Controller
 
     public function destroy(Request $request, Account $account): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         try {
             $this->accountService->delete($account);

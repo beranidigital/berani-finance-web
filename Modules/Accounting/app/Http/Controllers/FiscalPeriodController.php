@@ -18,7 +18,7 @@ class FiscalPeriodController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $periods = FiscalPeriod::whereCompany($request->header('company'))
             ->orderBy('start_date', 'desc')
@@ -31,7 +31,7 @@ class FiscalPeriodController extends Controller
 
     public function store(StoreFiscalPeriodRequest $request): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $period = $this->fiscalPeriodService->create(
             companyId: (int) $request->header('company'),
@@ -47,7 +47,7 @@ class FiscalPeriodController extends Controller
 
     public function show(Request $request, FiscalPeriod $fiscalPeriod): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         return response()->json([
             'data' => new FiscalPeriodResource($fiscalPeriod),
@@ -56,7 +56,7 @@ class FiscalPeriodController extends Controller
 
     public function update(StoreFiscalPeriodRequest $request, FiscalPeriod $fiscalPeriod): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $fiscalPeriod->update($request->validated());
 
@@ -67,7 +67,7 @@ class FiscalPeriodController extends Controller
 
     public function destroy(Request $request, FiscalPeriod $fiscalPeriod): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         $fiscalPeriod->delete();
 
@@ -76,7 +76,7 @@ class FiscalPeriodController extends Controller
 
     public function close(Request $request, FiscalPeriod $fiscalPeriod): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         try {
             $this->fiscalPeriodService->close($fiscalPeriod);
@@ -91,7 +91,7 @@ class FiscalPeriodController extends Controller
 
     public function reopen(Request $request, FiscalPeriod $fiscalPeriod): JsonResponse
     {
-        $this->authorize('manage accounting');
+        $this->authorize('manage-accounting');
 
         try {
             $this->fiscalPeriodService->reopen($fiscalPeriod);
