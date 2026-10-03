@@ -1,6 +1,8 @@
 <?php
 
+use App\Platform\Modules\Runtime\DatabaseActivator;
 use Nwidart\Modules\Activators\FileActivator;
+use Nwidart\Modules\Commands\Actions\ModuleDeleteCommand;
 use Nwidart\Modules\Providers\ConsoleServiceProvider;
 
 return [
@@ -168,9 +170,8 @@ return [
     |
     */
     'commands' => ConsoleServiceProvider::defaultCommands()
-        ->merge([
-            // InvoiceShelf-specific module commands go here
-        ])->toArray(),
+        ->reject(fn (string $command): bool => $command === ModuleDeleteCommand::class)
+        ->toArray(),
 
     /*
     |--------------------------------------------------------------------------
@@ -213,12 +214,15 @@ return [
     | Activators
     |--------------------------------------------------------------------------
     |
-    | InvoiceShelf-specific override: keep the statuses file under storage/app/
-    | so existing installations don't lose track of which modules are enabled
-    | when this config is republished. Upstream v13 defaults to base_path() but
-    | the v3 ModuleInstaller already writes here.
+    | Runtime activation uses the database activator above. The file activator
+    | remains only as a backwards-compatible fallback before the database is
+    | available during application bootstrap. Keep its legacy status file under
+    | storage/app rather than the application root.
     */
     'activators' => [
+        'database' => [
+            'class' => DatabaseActivator::class,
+        ],
         'file' => [
             'class' => FileActivator::class,
             'statuses-file' => base_path('storage/app/modules_statuses.json'),
@@ -227,7 +231,7 @@ return [
         ],
     ],
 
-    'activator' => 'file',
+    'activator' => 'database',
 
     /*
     |--------------------------------------------------------------------------

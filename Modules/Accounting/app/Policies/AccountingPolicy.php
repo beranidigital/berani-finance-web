@@ -2,7 +2,7 @@
 
 namespace Modules\Accounting\Policies;
 
-use App\Models\User;
+use App\Domains\Accounts\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class AccountingPolicy

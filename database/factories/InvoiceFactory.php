@@ -2,12 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\Currency;
-use App\Models\Customer;
-use App\Models\Invoice;
-use App\Models\RecurringInvoice;
-use App\Models\User;
-use App\Services\Document\SerialNumberService;
+use App\Domains\Accounts\Models\User;
+use App\Domains\Contacts\Models\Customer;
+use App\Domains\Money\Models\Currency;
+use App\Domains\Sales\Application\SerialNumberService;
+use App\Domains\Sales\Models\Invoice;
+use App\Domains\Sales\Models\RecurringInvoice;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class InvoiceFactory extends Factory
@@ -81,6 +81,7 @@ class InvoiceFactory extends Factory
         $sequenceNumber = (new SerialNumberService)
             ->setModel(new Invoice)
             ->setCompany(User::find(1)->companies()->first()->id)
+            ->setSequenceScope(['type' => Invoice::TYPE_INVOICE])
             ->setNextNumbers();
 
         return [

@@ -15,17 +15,16 @@ import InstallationLayout from '@/scripts/layouts/InstallationLayout.vue'
  *   4. DatabaseView      (/installation/database)
  *   5. DomainView        (/installation/domain)
  *   6. MailView          (/installation/mail)
- *   7. AiView            (/installation/ai)           — optional, skippable
- *   8. AccountView       (/installation/account)
- *   9. CompanyView       (/installation/company)
- *  10. PreferencesView   (/installation/preferences)
+ *   7. AccountView       (/installation/account)
+ *   8. CompanyView       (/installation/company)
+ *   9. PreferencesView   (/installation/preferences)
  *
  * Each child view owns its own next() function and calls router.push() to
  * the next step by route name. There is no event-based step coordination —
  * the router IS the state machine.
  */
 
-export const installationRoutes: RouteRecordRaw[] = [
+const wizardRoutes: RouteRecordRaw[] = [
   {
     path: '/installation',
     component: InstallationLayout,
@@ -92,15 +91,6 @@ export const installationRoutes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'ai',
-        name: 'installation.ai',
-        component: () => import('./views/AiView.vue'),
-        meta: {
-          title: 'settings.ai.installer_title',
-          isInstallation: true,
-        },
-      },
-      {
         path: 'account',
         name: 'installation.account',
         component: () => import('./views/AccountView.vue'),
@@ -130,3 +120,9 @@ export const installationRoutes: RouteRecordRaw[] = [
     ],
   },
 ]
+
+/**
+ * Empty in the mobile client. A client never installs anything: it connects
+ * to a server somebody else has already set up.
+ */
+export const installationRoutes: RouteRecordRaw[] = __INVOICESHELF_CLIENT__ ? [] : wizardRoutes

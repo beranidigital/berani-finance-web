@@ -1,13 +1,13 @@
 <?php
 
-use App\Models\Customer;
+use App\Domains\Contacts\Models\Customer;
 use Illuminate\Support\Facades\Artisan;
 
 use function Pest\Laravel\postJson;
 
-beforeEach(function () {
-    Artisan::call('db:seed', ['--class' => 'DatabaseSeeder', '--force' => true]);
-    Artisan::call('db:seed', ['--class' => 'DemoSeeder', '--force' => true]);
+beforeEach(function (): void {
+    Artisan::call('db:seed', ['--force' => true, '--class' => 'DatabaseSeeder']);
+    Artisan::call('db:seed', ['--force' => true, '--class' => 'DemoSeeder']);
 });
 
 test('customer portal guest entrypoints return the spa shell', function () {

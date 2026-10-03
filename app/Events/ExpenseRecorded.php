@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\Expense;
+use App\Domains\Purchases\Models\Expense;
 use Illuminate\Foundation\Events\Dispatchable;
 
 class ExpenseRecorded

@@ -1,15 +1,16 @@
 <?php
 
-use App\Http\Controllers\Company\Estimate\EstimatesController;
-use App\Http\Requests\DeleteEstimatesRequest;
-use App\Http\Requests\EstimatesRequest;
-use App\Http\Requests\SendEstimatesRequest;
-use App\Mail\SendEstimateMail;
-use App\Models\Company;
-use App\Models\Estimate;
-use App\Models\EstimateItem;
-use App\Models\Tax;
-use App\Models\User;
+use App\Domains\Accounts\Models\Company;
+use App\Domains\Accounts\Models\CompanySetting;
+use App\Domains\Accounts\Models\User;
+use App\Domains\Sales\Http\Controllers\Company\EstimatesController;
+use App\Domains\Sales\Http\Requests\DeleteEstimatesRequest;
+use App\Domains\Sales\Http\Requests\EstimatesRequest;
+use App\Domains\Sales\Http\Requests\SendEstimatesRequest;
+use App\Domains\Sales\Mail\SendEstimateMail;
+use App\Domains\Sales\Models\Estimate;
+use App\Domains\Sales\Models\EstimateItem;
+use App\Domains\Taxation\Models\Tax;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Sanctum\Sanctum;
 
@@ -326,6 +327,93 @@ test('create estimate with tax per item', function () {
     ]);
 });
 
+test('persists exclusive per-item simple and compound tax totals', function () {
+    $companyId = User::find(1)->companies()->first()->id;
+    CompanySetting::setSettings(['tax_per_item' => 'YES'], $companyId);
+
+    $simpleTax = Tax::factory()->raw([
+        'name' => 'VAT 19%',
+        'percent' => 19,
+        'amount' => 1900,
+        'compound_tax' => false,
+    ]);
+    $compoundTax = Tax::factory()->raw([
+        'name' => 'Cash levy 1%',
+        'percent' => 1,
+        'amount' => 119,
+        'compound_tax' => true,
+    ]);
+    $placeholderTax = [
+        'tax_type_id' => 0,
+        'name' => '',
+        'amount' => 0,
+        'percent' => null,
+        'calculation_type' => null,
+        'fixed_amount' => 0,
+        'compound_tax' => false,
+    ];
+    $item = EstimateItem::factory()->raw([
+        'price' => 10000,
+        'quantity' => 1,
+        'discount' => 0,
+        'discount_val' => 0,
+        'tax' => 2019,
+        'taxes' => [$simpleTax, $compoundTax, $placeholderTax],
+    ]);
+    $estimate = Estimate::factory()->raw([
+        'items' => [$item],
+        'taxes' => [],
+        'discount' => 0,
+        'discount_val' => 0,
+        'tax_included' => false,
+        'sub_total' => 1,
+        'tax' => 1,
+        'total' => 1,
+    ]);
+
+    postJson('api/v1/estimates', $estimate)->assertCreated();
+
+    $savedEstimate = Estimate::query()
+        ->where('estimate_number', $estimate['estimate_number'])
+        ->firstOrFail();
+    $savedItem = $savedEstimate->items()->firstOrFail();
+
+    expect($savedEstimate->sub_total)->toBe(10000)
+        ->and($savedEstimate->tax)->toBe(2019)
+        ->and($savedEstimate->total)->toBe(12019)
+        ->and($savedItem->taxes()->count())->toBe(2);
+
+    $this->assertDatabaseHas('taxes', [
+        'estimate_item_id' => $savedItem->id,
+        'tax_type_id' => $simpleTax['tax_type_id'],
+        'amount' => 1900,
+        'compound_tax' => 0,
+    ]);
+    $this->assertDatabaseHas('taxes', [
+        'estimate_item_id' => $savedItem->id,
+        'tax_type_id' => $compoundTax['tax_type_id'],
+        'amount' => 119,
+        'compound_tax' => 1,
+    ]);
+});
+
+test('rejects a nonzero per-item placeholder tax row', function () {
+    $estimate = Estimate::factory()->raw([
+        'estimate_number' => 'EST-PLACEHOLDER',
+        'items' => [
+            EstimateItem::factory()->raw([
+                'taxes' => [[
+                    'amount' => 1,
+                ]],
+            ]),
+        ],
+    ]);
+
+    postJson('api/v1/estimates', $estimate)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('items.0.taxes.0.amount');
+});
+
 test('create estimate with EUR currency', function () {
     $estimate = Estimate::factory()
         ->raw([
@@ -335,15 +423,15 @@ test('create estimate with EUR currency', function () {
             'total' => 189,
             'tax' => 9,
             'exchange_rate' => 86.403538,
-            'base_discount_val' => 1728.07,
-            'base_sub_total' => 17280.71,
-            'base_total' => 16330.27,
-            'base_tax' => 777.63,
+            'base_discount_val' => 1728,
+            'base_sub_total' => 17281,
+            'base_total' => 16330,
+            'base_tax' => 778,
             'taxes' => [Tax::factory()->raw([
                 'amount' => 9,
                 'percent' => 5,
                 'exchange_rate' => 86.403538,
-                'base_amount' => 777.63,
+                'base_amount' => 778,
             ])],
             'items' => [EstimateItem::factory()->raw([
                 'discount_type' => 'fixed',
@@ -355,9 +443,9 @@ test('create estimate with EUR currency', function () {
                 'total' => 200,
                 'exchange_rate' => 86.403538,
                 'base_discount_val' => 0,
-                'base_price' => 17280.71,
-                'base_tax' => 777.63,
-                'base_total' => 17280.71,
+                'base_price' => 17281,
+                'base_tax' => 0,
+                'base_total' => 17281,
             ])],
         ]);
 
@@ -402,16 +490,16 @@ test('update estimate with EUR currency', function () {
             'total' => 189,
             'tax' => 9,
             'exchange_rate' => 86.403538,
-            'base_discount_val' => 1728.07076,
-            'base_sub_total' => 17280.7076,
-            'base_total' => 16330.268682,
-            'base_tax' => 777.631842,
+            'base_discount_val' => 1728,
+            'base_sub_total' => 17281,
+            'base_total' => 16330,
+            'base_tax' => 778,
             'taxes' => [Tax::factory()->raw([
                 'tax_type_id' => $estimate->taxes[0]->tax_type_id,
                 'amount' => 9,
                 'percent' => 5,
                 'exchange_rate' => 86.403538,
-                'base_amount' => 777.631842,
+                'base_amount' => 778,
             ])],
             'items' => [EstimateItem::factory()->raw([
                 'estimate_id' => $estimate->id,
@@ -424,9 +512,9 @@ test('update estimate with EUR currency', function () {
                 'total' => 200,
                 'exchange_rate' => 86.403538,
                 'base_discount_val' => 0,
-                'base_price' => 17280.7076,
+                'base_price' => 17281,
                 'base_tax' => 0,
-                'base_total' => 17280.7076,
+                'base_total' => 17281,
             ])],
         ]);
 

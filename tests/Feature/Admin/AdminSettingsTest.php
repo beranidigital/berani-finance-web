@@ -1,6 +1,8 @@
 <?php
 
-use App\Models\User;
+use App\Domains\Accounts\Models\User;
+use App\Platform\Mail\Application\MailConfigurationService;
+use App\Platform\Operations\Models\Setting;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpClient\HttpClient;
@@ -10,18 +12,14 @@ use Symfony\Component\Mailer\Bridge\Postmark\Transport\PostmarkTransportFactory;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
-beforeEach(function () {
-    Artisan::call('db:seed', ['--class' => 'DatabaseSeeder', '--force' => true]);
-    Artisan::call('db:seed', ['--class' => 'DemoSeeder', '--force' => true]);
+beforeEach(function (): void {
+    Artisan::call('db:seed', ['--force' => true, '--class' => 'DatabaseSeeder']);
+    Artisan::call('db:seed', ['--force' => true, '--class' => 'DemoSeeder']);
 
-    $user = User::find(1);
-    $this->withHeaders([
-        'company' => $user->companies()->first()->id,
-    ]);
-    Sanctum::actingAs(
-        $user,
-        ['*']
-    );
+    $user = User::query()->find(1);
+    $companyId = $user->companies()->first()->getKey();
+    $this->withHeaders(['company' => $companyId]);
+    Sanctum::actingAs($user, ['*']);
 });
 
 test('company settings config uses canonical v2 links', function () {
@@ -74,6 +72,30 @@ test('get global mail configuration', function () {
             'from_name',
             'from_mail',
         ]);
+});
+
+test('the global mail configuration never sends a stored secret back', function () {
+    Setting::setSettings([
+        'mail_driver' => 'smtp',
+        'mail_host' => 'smtp.example.com',
+        'mail_password' => 'stored-global-password',
+    ]);
+
+    getJson('/api/v1/mail/config')
+        ->assertOk()
+        ->assertJson(['mail_password' => MailConfigurationService::SECRET_MASK])
+        ->assertDontSee('stored-global-password');
+
+    postJson('/api/v1/mail/config', [
+        'mail_driver' => 'smtp',
+        'mail_host' => 'smtp.example.com',
+        'mail_port' => 587,
+        'mail_password' => MailConfigurationService::SECRET_MASK,
+        'from_name' => 'InvoiceShelf',
+        'from_mail' => 'hello@example.com',
+    ])->assertOk();
+
+    expect(Setting::getSetting('mail_password'))->toBe('stored-global-password');
 });
 
 test('get global mail drivers returns capability-backed drivers', function () {
@@ -162,24 +184,138 @@ test('get pdf configuration', function () {
         ->assertJsonStructure([
             'pdf_driver',
             'gotenberg_host',
-            'gotenberg_margins',
-            'gotenberg_papersize',
+            'pdf_paper_width',
+            'pdf_paper_height',
+            'pdf_orientation',
+            'pdf_margin_top',
+            'pdf_margin_right',
+            'pdf_margin_bottom',
+            'pdf_margin_left',
         ]);
 });
 
-test('save pdf configuration', function () {
+/**
+ * Page geometry is saved for whichever driver is selected. It used to hang off
+ * gotenberg_papersize, so picking dompdf meant having no paper size at all and
+ * switching drivers threw the setting away.
+ */
+test('save pdf configuration stores the page setup for dompdf too', function () {
     postJson('/api/v1/pdf/config', [
         'pdf_driver' => 'dompdf',
+        'pdf_paper_width' => '8.5in',
+        'pdf_paper_height' => '14in',
+        'pdf_orientation' => 'landscape',
+        'pdf_margin_top' => '5mm',
+        'pdf_margin_right' => '6mm',
+        'pdf_margin_bottom' => '7mm',
+        'pdf_margin_left' => '8mm',
     ])
         ->assertOk()
-        ->assertJson([
-            'success' => 'pdf_variables_save_successfully',
-        ]);
+        ->assertJson(['success' => 'pdf_variables_save_successfully']);
 
-    $this->assertDatabaseHas('settings', [
-        'option' => 'pdf_driver',
-        'value' => 'dompdf',
-    ]);
+    foreach ([
+        'pdf_driver' => 'dompdf',
+        'pdf_paper_width' => '8.5in',
+        'pdf_paper_height' => '14in',
+        'pdf_orientation' => 'landscape',
+        'pdf_margin_top' => '5mm',
+        'pdf_margin_right' => '6mm',
+        'pdf_margin_bottom' => '7mm',
+        'pdf_margin_left' => '8mm',
+    ] as $option => $value) {
+        $this->assertDatabaseHas('settings', compact('option', 'value'));
+    }
+});
+
+test('pdf configuration rejects a length with no unit', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'dompdf',
+        'pdf_paper_width' => '210',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+    ])->assertStatus(422)->assertJsonValidationErrors('pdf_paper_width');
+});
+
+test('pdf configuration rejects an unknown orientation', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'dompdf',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'sideways',
+    ])->assertStatus(422)->assertJsonValidationErrors('pdf_orientation');
+});
+
+/**
+ * A zero margin is a deliberate choice. Runtime configuration must not discard
+ * it as empty, so this pins the behavior through the API round trip.
+ */
+test('page numbers can be turned on and read back', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'gotenberg',
+        'gotenberg_host' => 'https://pdf.example.com',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+        'pdf_page_numbers' => true,
+    ])->assertOk();
+
+    getJson('/api/v1/pdf/config')->assertOk()->assertJson(['pdf_page_numbers' => true]);
+});
+
+/**
+ * The dompdf form does not render the page-numbers control, since dompdf cannot
+ * repeat a footer. Saving from it must leave the stored choice alone rather than
+ * writing an absent field as false.
+ */
+test('saving from the dompdf form leaves the page-number choice alone', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'gotenberg',
+        'gotenberg_host' => 'https://pdf.example.com',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+        'pdf_page_numbers' => true,
+    ])->assertOk();
+
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'dompdf',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+    ])->assertOk();
+
+    getJson('/api/v1/pdf/config')->assertOk()->assertJson(['pdf_page_numbers' => true]);
+});
+
+test('page numbers can be turned back off', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'gotenberg',
+        'gotenberg_host' => 'https://pdf.example.com',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+        'pdf_page_numbers' => false,
+    ])->assertOk();
+
+    // Stored as the string '0', which !empty() would have discarded.
+    $this->assertDatabaseHas('settings', ['option' => 'pdf_page_numbers', 'value' => '0']);
+
+    getJson('/api/v1/pdf/config')->assertOk()->assertJson(['pdf_page_numbers' => false]);
+});
+
+test('a zero margin survives the round trip', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'dompdf',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+        'pdf_margin_top' => '0mm',
+        'pdf_margin_right' => '0mm',
+        'pdf_margin_bottom' => '0mm',
+        'pdf_margin_left' => '0mm',
+    ])->assertOk();
+
+    getJson('/api/v1/pdf/config')->assertOk()->assertJson(['pdf_margin_top' => '0mm']);
 });
 
 test('get app version', function () {
@@ -189,4 +325,44 @@ test('get app version', function () {
             'version',
             'channel',
         ]);
+});
+
+/**
+ * The SDK forwards the pdfa value unvalidated, so an unsupported one would only
+ * fail later as an HTTP error from the Gotenberg service. The setting is a fixed
+ * list checked against what gotenberg:8 can actually produce.
+ */
+test('the archival format must be one gotenberg can produce', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'gotenberg',
+        'gotenberg_host' => 'https://pdf.example.com',
+        'gotenberg_pdfa' => 'PDF/A-9z',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+    ])->assertStatus(422)->assertJsonValidationErrors('gotenberg_pdfa');
+});
+
+test('the archival format round trips, and off is a real choice', function () {
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'gotenberg',
+        'gotenberg_host' => 'https://pdf.example.com',
+        'gotenberg_pdfa' => 'PDF/A-3b',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+    ])->assertOk();
+
+    getJson('/api/v1/pdf/config')->assertOk()->assertJson(['gotenberg_pdfa' => 'PDF/A-3b']);
+
+    postJson('/api/v1/pdf/config', [
+        'pdf_driver' => 'gotenberg',
+        'gotenberg_host' => 'https://pdf.example.com',
+        'gotenberg_pdfa' => '',
+        'pdf_paper_width' => '210mm',
+        'pdf_paper_height' => '297mm',
+        'pdf_orientation' => 'portrait',
+    ])->assertOk();
+
+    getJson('/api/v1/pdf/config')->assertOk()->assertJson(['gotenberg_pdfa' => '']);
 });

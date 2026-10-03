@@ -32,6 +32,9 @@ export interface NormalizedApiError {
  * Known error message to translation key map.
  */
 const ERROR_TRANSLATION_MAP: Record<string, string> = {
+  'demo_mode': 'demo.blocked',
+  'managed_mode': 'managed.blocked',
+  'This is turned off in the demo.': 'demo.blocked',
   'These credentials do not match our records.': 'errors.login_invalid_credentials',
   'The provided credentials are incorrect.': 'errors.login_invalid_credentials',
   'invalid_key': 'errors.invalid_provider_key',
@@ -41,6 +44,8 @@ const ERROR_TRANSLATION_MAP: Record<string, string> = {
   'payments_attached': 'settings.payment_modes.payments_attached',
   'expenses_attached': 'settings.payment_modes.expenses_attached',
   'role_attached_to_users': 'settings.roles.already_in_use',
+  'role_preset_in_use': 'settings.role_presets.in_use',
+  'role_preset_locked': 'settings.role_presets.locked',
   'items_attached': 'settings.customization.items.already_in_use',
   'payment_attached_message': 'invoices.payment_attached_message',
   'The email has already been taken.': 'validation.email_already_taken',
@@ -48,8 +53,44 @@ const ERROR_TRANSLATION_MAP: Record<string, string> = {
   'Relation invoiceItems exists.': 'items.item_attached_message',
   'Relation taxes exists.': 'settings.tax_types.already_in_use',
   'Relation payments exists.': 'errors.payment_attached',
+  'Credit note exists.': 'errors.credit_note_attached',
+  'a_credit_note_cannot_be_created_from_a_credit_note':
+    'errors.credit_note_cannot_be_created_from_credit_note',
+  'a_draft_invoice_cannot_be_credited': 'errors.draft_invoice_cannot_be_credited',
+  'invoice_already_fully_credited': 'errors.invoice_already_fully_credited',
+  'credit_quantity_exceeds_remaining': 'errors.credit_quantity_exceeds_remaining',
+  'credit_amount_exceeds_invoice_balance': 'errors.credit_amount_exceeds_invoice_balance',
+  'credit_note_must_credit_something': 'errors.credit_note_must_credit_something',
+  'payment_amount_exceeds_invoice_due_amount':
+    'errors.payment_amount_exceeds_invoice_due_amount',
+  'payment_amount_must_be_positive': 'payments.invalid_amount_message',
+  'payment_allocation_required': 'errors.payment_allocation_required',
+  'payment_allocation_invalid': 'errors.payment_allocation_invalid',
+  'payment_allocation_duplicate_invoice': 'errors.payment_allocation_duplicate_invoice',
+  'payment_allocation_exceeds_payment_amount':
+    'errors.payment_allocation_exceeds_payment_amount',
+  'payment_allocation_payment_not_found':
+    'errors.payment_allocation_payment_not_found',
+  'payment_allocation_invoice_not_found':
+    'errors.payment_allocation_invoice_not_found',
+  'payment_allocation_invoice_mismatch':
+    'errors.payment_allocation_invoice_mismatch',
+  'payment_allocation_invoice_not_payable':
+    'errors.payment_allocation_invoice_not_payable',
+  'payment_allocation_exceeds_invoice_balance':
+    'errors.payment_allocation_exceeds_invoice_balance',
+  'payment_customer_change_requires_unallocated_credit':
+    'errors.payment_customer_change_requires_unallocated_credit',
+  'invoice_has_payment_allocations': 'errors.payment_attached',
+  'credit_item_not_on_invoice': 'errors.credit_item_not_on_invoice',
+  'credit_quantity_invalid': 'errors.credit_quantity_invalid',
+  'a_credit_note_cannot_be_cloned': 'errors.credit_note_cannot_be_cloned',
+  'a_credit_note_cannot_be_converted_to_an_estimate':
+    'errors.credit_note_cannot_be_converted_to_estimate',
+  'invoice_must_be_settled_before_completion':
+    'errors.invoice_must_be_settled_before_completion',
   'The estimate number has already been taken.': 'errors.estimate_number_used',
-  'The payment number has already been taken.': 'errors.estimate_number_used',
+  'The payment number has already been taken.': 'errors.payment_number_used',
   'The invoice number has already been taken.': 'errors.invoice_number_used',
   'The name has already been taken.': 'errors.name_already_taken',
   'total_invoice_amount_must_be_more_than_paid_amount': 'invoices.invalid_due_amount_message',
@@ -64,8 +105,10 @@ const ERROR_TRANSLATION_MAP: Record<string, string> = {
   'invalid_format': 'errors.invalid_format',
   'api_error': 'errors.api_error',
   'feature_not_enabled': 'errors.feature_not_enabled',
+  'module_runtime_missing': 'modules.runtime_missing',
   'request_limit_met': 'errors.request_limit_met',
   'address_incomplete': 'errors.address_incomplete',
+  'recurrence_frequency_invalid': 'errors.recurrence_frequency_invalid',
   'invalid_address': 'errors.invalid_address',
   'Email could not be sent to this email address.': 'errors.email_could_not_be_sent',
 }
@@ -162,5 +205,13 @@ export function extractValidationErrors(err: unknown): Record<string, string[]> 
  * @returns The translation key if known, or null if not mapped
  */
 export function getErrorTranslationKey(errorMessage: string): string | null {
-  return ERROR_TRANSLATION_MAP[errorMessage] ?? null
+  if (ERROR_TRANSLATION_MAP[errorMessage]) {
+    return ERROR_TRANSLATION_MAP[errorMessage]
+  }
+
+  // Purchasing and recurring invoices send codes that name their own key
+  // under `errors`.
+  return /^(purchase|recurring_invoice)_[a-z_]+$/.test(errorMessage)
+    ? `errors.${errorMessage}`
+    : null
 }

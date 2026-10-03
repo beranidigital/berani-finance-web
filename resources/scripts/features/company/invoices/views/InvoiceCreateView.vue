@@ -1,7 +1,7 @@
 <template>
   <BasePage class="relative invoice-create-page">
     <form @submit.prevent="submitForm">
-      <BasePageHeader :title="pageTitle">
+      <BasePageHeader :help="$t(isRecurring ? 'page_help.recurring_invoices' : 'page_help.invoices')" :title="pageTitle">
         <BaseBreadcrumb>
           <BaseBreadcrumbItem :title="$t('general.home')" to="/admin/dashboard" />
           <BaseBreadcrumbItem :title="$t('invoices.invoice', 2)" to="/admin/invoices" />
@@ -14,19 +14,21 @@
           <BaseBreadcrumbItem v-else :title="$t('invoices.new_invoice')" to="#" active />
         </BaseBreadcrumb>
 
-        <template #actions>
+        <!-- Phones get these in the bottom bar and the form instead -->
+        <template v-if="!isPhone" #actions>
           <!-- Make Recurring Toggle -->
-          <div v-if="!isEdit" class="flex items-center mr-4">
-            <BaseSwitch v-model="isRecurring" class="mr-2" />
-            <span class="text-sm font-medium text-heading whitespace-nowrap">{{ $t('recurring_invoices.make_recurring') }}</span>
+          <div v-if="!isEdit" class="flex items-center me-4">
+            <BaseSwitch v-model="isRecurring" class="me-2" aria-labelledby="make-recurring-label" />
+            <span id="make-recurring-label" class="text-sm font-medium text-heading whitespace-nowrap">{{ $t('recurring_invoices.make_recurring') }}</span>
           </div>
 
           <router-link
             v-if="isEdit"
             :to="`/invoices/pdf/${invoiceStore.newInvoice.unique_hash}`"
             target="_blank"
+            class="inline-flex rounded-lg me-3"
           >
-            <BaseButton class="mr-3" variant="primary-outline" type="button">
+            <BaseButton tag="span" variant="primary-outline">
               <span class="flex">
                 {{ $t('general.view_pdf') }}
               </span>
@@ -51,6 +53,26 @@
         </template>
       </BasePageHeader>
 
+      <DocumentFormActionBar
+        :total="invoiceStore.getTotal"
+        :currency="invoiceStore.newInvoice.selectedCurrency"
+        :save-label="isRecurring ? $t('recurring_invoices.save_invoice') : $t('invoices.save_invoice')"
+        :saving="isSaving"
+        :loading="isLoadingContent"
+        :pdf-url="isEdit ? `/invoices/pdf/${invoiceStore.newInvoice.unique_hash}` : null"
+      />
+
+      <!-- On phones, making it recurring is a setting of the document -->
+      <label
+        v-if="isPhone && !isEdit"
+        class="flex items-center justify-between gap-4 px-4 py-3 mt-5 border cursor-pointer glass rounded-xl"
+      >
+        <span id="make-recurring-sheet-label" class="text-sm font-medium text-heading">
+          {{ $t('recurring_invoices.make_recurring') }}
+        </span>
+        <BaseSwitch v-model="isRecurring" aria-labelledby="make-recurring-sheet-label" />
+      </label>
+
       <!-- Select Customer & Basic Fields -->
       <InvoiceBasicFields
         :v="v$"
@@ -65,6 +87,7 @@
           :currency="invoiceStore.newInvoice.selectedCurrency"
           :is-loading="isLoadingContent"
           :item-validation-scope="invoiceValidationScope"
+          :tax-included-setting="companyStore.selectedCompanySettings.tax_included"
           :store="invoiceStore"
           store-prop="newInvoice"
         />
@@ -73,7 +96,7 @@
         <div
           class="block mt-10 invoice-foot lg:flex lg:justify-between lg:items-start"
         >
-          <div class="relative w-full lg:w-1/2 lg:mr-4">
+          <div class="relative w-full lg:w-1/2 lg:me-4">
             <!-- Invoice Custom Notes -->
             <DocumentNotes
               :store="invoiceStore"
@@ -121,9 +144,16 @@ import useVuelidate from '@vuelidate/core'
 import { useInvoiceStore } from '../store'
 import { useRecurringInvoiceStore } from '@/scripts/features/company/recurring-invoices/store'
 import { useCompanyStore } from '@/scripts/stores/company.store'
+import { useNotificationStore } from '@/scripts/stores/notification.store'
+import { useBreakpoints } from '@/scripts/composables/use-breakpoints'
+import {
+  handleApiError,
+  getErrorTranslationKey,
+} from '@/scripts/utils/error-handling'
 import InvoiceBasicFields from '../components/InvoiceBasicFields.vue'
 import {
   DocumentItemsTable,
+  DocumentFormActionBar,
   DocumentTotals,
   DocumentNotes,
   TemplateSelectButton,
@@ -133,9 +163,11 @@ import {
 const invoiceStore = useInvoiceStore()
 const recurringInvoiceStore = useRecurringInvoiceStore()
 const companyStore = useCompanyStore()
+const notificationStore = useNotificationStore()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const { isPhone } = useBreakpoints()
 
 const invoiceValidationScope = 'newInvoice'
 const isSaving = ref<boolean>(false)
@@ -337,9 +369,8 @@ async function submitForm(): Promise<void> {
   v$.value.$touch()
 
   if (v$.value.$invalid) {
-    console.log('Invoice form invalid. Errors:', JSON.stringify(
-      v$.value.$errors.map((e: { $property: string; $message: string }) => `${e.$property}: ${e.$message}`)
-    ))
+    // The first invalid field, often the customer, takes focus on its own
+    notificationStore.showNotification({ type: 'error', message: t('general.check_highlighted_fields') })
     return
   }
 
@@ -426,10 +457,16 @@ async function submitForm(): Promise<void> {
       const response = await action(data)
       router.push(`/admin/invoices/${response.data.data.id}/view`)
     }
-  } catch (err) {
-    console.error(err)
-  }
+  } catch (err: unknown) {
+    const normalized = handleApiError(err)
+    const translationKey = getErrorTranslationKey(normalized.message)
 
-  isSaving.value = false
+    notificationStore.showNotification({
+      type: 'error',
+      message: translationKey ? t(translationKey) : normalized.message,
+    })
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>

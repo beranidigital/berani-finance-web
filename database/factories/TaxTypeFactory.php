@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\TaxType;
-use App\Models\User;
+use App\Domains\Accounts\Models\User;
+use App\Domains\Taxation\Models\TaxType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TaxTypeFactory extends Factory
@@ -23,6 +23,7 @@ class TaxTypeFactory extends Factory
         return [
             'name' => $this->faker->word(),
             'calculation_type' => 'percentage',
+            'transaction_type' => TaxType::TRANSACTION_TYPE_SALES,
             'company_id' => User::find(1)->companies()->first()->id,
             'percent' => $this->faker->numberBetween($min = 0, $max = 100),
             'fixed_amount' => null,

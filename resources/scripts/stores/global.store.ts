@@ -19,6 +19,7 @@ import { handleApiError } from '../utils/error-handling'
 import * as localStore from '../utils/local-storage'
 import type { Currency } from '@/scripts/types/domain/currency'
 import type { Country } from '@/scripts/types/domain/customer'
+import { emitBootstrapCompleted } from '@/scripts/extensions/runtime'
 
 export const useGlobalStore = defineStore('global', () => {
   // State
@@ -36,24 +37,27 @@ export const useGlobalStore = defineStore('global', () => {
   const mainMenu = ref<MenuItem[]>([])
   const settingMenu = ref<MenuItem[]>([])
   const userMenu = ref<Array<{ title: string; link: string; icon: string; name: string }>>([])
-  const ai = ref<{ enabled: boolean; chat_enabled: boolean; text_generation_enabled: boolean }>({
-    enabled: false,
-    chat_enabled: false,
-    text_generation_enabled: false,
-  })
   const isAppLoaded = ref<boolean>(false)
+  // On phones the navigation lives in the More sheet; this is its open state.
   const isSidebarOpen = ref<boolean>(false)
   const isSidebarCollapsed = ref<boolean>(localStore.getBoolean('sidebarCollapsed'))
+  const isSearchOpen = ref<boolean>(false)
+  // Pages with a sticky bottom action bar (editors, document views) register it
+  // here so the phone tab bar steps aside while they are mounted.
+  const actionBarCount = ref<number>(0)
   const areCurrenciesLoading = ref<boolean>(false)
 
   const downloadReport = ref<(() => void) | null>(null)
 
   // Getters
+  // Groups keep the order the server sent them in (the core groups as configured,
+  // then module groups in registration order); priority only orders entries
+  // inside a group, so a module entry with a low priority cannot lift its whole
+  // group above the core ones.
   const menuGroups = computed<MenuItem[][]>(() => {
-    const sorted = [...mainMenu.value].sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100))
-    const groups = groupBy(sorted, 'group')
-    return Object.values(groups).sort(
-      (a, b) => (a[0]?.priority ?? 100) - (b[0]?.priority ?? 100)
+    const groups = groupBy(mainMenu.value, 'group')
+    return Object.values(groups).map((items) =>
+      [...items].sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100))
     )
   })
 
@@ -69,12 +73,6 @@ export const useGlobalStore = defineStore('global', () => {
       mainMenu.value = response.main_menu
       settingMenu.value = response.setting_menu
       userMenu.value = response.user_menu ?? []
-      ai.value = response.ai ?? {
-        enabled: false,
-        chat_enabled: false,
-        text_generation_enabled: false,
-      }
-
       config.value = response.config
       globalSettings.value = response.global_settings
 
@@ -123,7 +121,12 @@ export const useGlobalStore = defineStore('global', () => {
         (userLang && userLang !== 'default' ? userLang : '') ||
         (response.current_company_settings as Record<string, string>)?.language ||
         'en'
-      await (window as Record<string, unknown>).loadLanguage?.(uiLanguage)
+      await window.loadLanguage?.(uiLanguage)
+
+      emitBootstrapCompleted({
+        adminMode: response.admin_mode === true,
+        companyId: response.current_company?.id ?? null,
+      })
 
       return response
     } catch (err: unknown) {
@@ -252,6 +255,22 @@ export const useGlobalStore = defineStore('global', () => {
     isSidebarOpen.value = val
   }
 
+  function setSearchOpen(val: boolean): void {
+    isSearchOpen.value = val
+  }
+
+  function registerActionBar(): () => void {
+    actionBarCount.value++
+    let released = false
+
+    return () => {
+      if (!released) {
+        released = true
+        actionBarCount.value--
+      }
+    }
+  }
+
   function toggleSidebarCollapse(): void {
     isSidebarCollapsed.value = !isSidebarCollapsed.value
     localStore.set('sidebarCollapsed', isSidebarCollapsed.value)
@@ -302,10 +321,11 @@ export const useGlobalStore = defineStore('global', () => {
     mainMenu,
     settingMenu,
     userMenu,
-    ai,
     isAppLoaded,
     isSidebarOpen,
     isSidebarCollapsed,
+    isSearchOpen,
+    actionBarCount,
     areCurrenciesLoading,
     downloadReport,
     // Getters
@@ -320,6 +340,8 @@ export const useGlobalStore = defineStore('global', () => {
     fetchCountries,
     fetchPlaceholders,
     setSidebarVisibility,
+    setSearchOpen,
+    registerActionBar,
     toggleSidebarCollapse,
     setIsAppLoaded,
     updateGlobalSettings,

@@ -1,27 +1,27 @@
 <template>
+  <!--
+    Announced through the live region in NotificationRoot, not from here.
+    Hover and focus both pause the timer.
+  -->
+  <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
-    :class="success || info ? 'bg-surface' : 'bg-alert-error-bg'"
     class="
-      max-w-sm
-      mb-3
-      rounded-lg
-      shadow-lg
-      cursor-pointer
-      pointer-events-auto
-      w-full
-      md:w-96
+      w-full max-w-sm mb-2.5 border rounded-xl pointer-events-auto
+      md:w-96 glass-strong
     "
-    @click.stop="hideNotificationAction"
     @mouseenter="clearNotificationTimeOut"
     @mouseleave="setNotificationTimeOut"
+    @focusin="clearNotificationTimeOut"
+    @focusout="setNotificationTimeOut"
   >
-    <div class="overflow-hidden rounded-lg shadow-xs">
-      <div class="p-4">
+    <div class="overflow-hidden rounded-xl">
+      <div class="p-3.5">
         <div class="flex items-start">
           <div class="shrink-0">
             <svg
               v-if="success"
-              class="w-6 h-6 text-alert-success-text"
+              aria-hidden="true"
+              class="w-5 h-5 text-status-green"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -35,7 +35,8 @@
             </svg>
             <svg
               v-if="info"
-              class="w-6 h-6 text-status-blue"
+              aria-hidden="true"
+              class="w-5 h-5 text-status-blue"
               fill="currentColor"
               viewBox="0 0 20 20"
               xmlns="http://www.w3.org/2000/svg"
@@ -47,8 +48,24 @@
               ></path>
             </svg>
             <svg
+              v-if="warning"
+              aria-hidden="true"
+              class="w-5 h-5 text-status-yellow"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+              />
+            </svg>
+            <svg
               v-if="error"
-              class="w-6 h-6 text-alert-error-text"
+              aria-hidden="true"
+              class="w-5 h-5 text-status-red"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -59,54 +76,28 @@
               />
             </svg>
           </div>
-          <div class="flex-1 w-0 ml-3 text-left">
+          <div class="flex-1 w-0 ms-3 text-start">
             <p
-              :class="`text-sm leading-5 font-medium ${
-                success || info ? 'text-heading' : 'text-alert-error-text'
-              }`"
+              class="text-sm font-medium leading-5 text-heading"
             >
-              {{
-                notification.title
-                  ? notification.title
-                  : success
-                  ? 'Success!'
-                  : 'Error'
-              }}
+              {{ title }}
             </p>
             <p
-              :class="`mt-1 text-sm leading-5 ${
-                success || info ? 'text-muted' : 'text-alert-error-text'
-              }`"
+              class="mt-0.5 text-sm leading-5 text-muted"
             >
-              {{
-                notification.message
-                  ? $t(notification.message)
-                  : success
-                  ? $t('general.successful')
-                  : $t('general.something_went_wrong')
-              }}
+              {{ message }}
             </p>
           </div>
           <div class="flex shrink-0">
             <button
-              :class="
-                success || info
-                  ? ' text-subtle focus:text-muted'
-                  : 'text-alert-error-text focus:text-alert-error-text'
-              "
-              class="
-                inline-flex
-                w-5
-                h-5
-                transition
-                duration-150
-                ease-in-out
-                focus:outline-hidden
-              "
+              type="button"
+              class="p-1 -m-1 transition-colors rounded-md text-muted hover:text-heading focus:outline-hidden focus-visible:ring-2 focus-visible:ring-focus"
+              :aria-label="$t('general.close')"
               @click="hideNotificationAction"
             >
               <svg
-                class="w-6 h-6"
+                aria-hidden="true"
+                class="w-4 h-4"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 xmlns="http://www.w3.org/2000/svg"
@@ -127,9 +118,11 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useNotificationStore } from '@/scripts/stores/notification.store'
+import { notificationMessage, notificationTitle } from './notification-text'
 
-export type NotificationType = 'success' | 'error' | 'info'
+export type NotificationType = 'success' | 'error' | 'warning' | 'info'
 
 export interface Notification {
   id: string
@@ -146,6 +139,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const notificationStore = useNotificationStore()
+const { t } = useI18n()
 
 const notiTimeOut = ref<ReturnType<typeof setTimeout> | null>(null)
 
@@ -161,6 +155,14 @@ const info = computed<boolean>(() => {
   return props.notification.type === 'info'
 })
 
+const warning = computed<boolean>(() => {
+  return props.notification.type === 'warning'
+})
+
+const title = computed<string>(() => notificationTitle(props.notification, t))
+
+const message = computed<string>(() => notificationMessage(props.notification, t))
+
 function hideNotificationAction(): void {
   notificationStore.hideNotification(props.notification)
 }
@@ -172,6 +174,13 @@ function clearNotificationTimeOut(): void {
 }
 
 function setNotificationTimeOut(): void {
+  clearNotificationTimeOut()
+
+  // An error stays until it is dismissed: it may need reading twice
+  if (error.value && !props.notification.time) {
+    return
+  }
+
   notiTimeOut.value = setTimeout(() => {
     notificationStore.hideNotification(props.notification)
   }, props.notification.time || 5000)

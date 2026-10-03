@@ -50,6 +50,14 @@ const sendAsAttachmentField = computed<boolean>({
 
   <BaseDivider class="mt-6 mb-2" />
 
+  <NumberCustomizer
+    type="credit_note"
+    :type-store="invoiceStore"
+    default-series="CN"
+  />
+
+  <BaseDivider class="mt-6 mb-2" />
+
   <InvoicesTabDueDate />
 
   <BaseDivider class="mt-6 mb-2" />
@@ -62,7 +70,7 @@ const sendAsAttachmentField = computed<boolean>({
 
   <BaseDivider class="mt-6 mb-2" />
 
-  <ul class="divide-y divide-line-default">
+  <div class="divide-y divide-line-default">
     <BaseSwitchSection
       v-model="sendAsAttachmentField"
       :title="$t('settings.customization.invoices.invoice_email_attachment')"
@@ -72,5 +80,5 @@ const sendAsAttachmentField = computed<boolean>({
         )
       "
     />
-  </ul>
+  </div>
 </template>

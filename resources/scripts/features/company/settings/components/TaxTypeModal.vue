@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   required,
@@ -9,22 +9,45 @@ import {
   helpers,
 } from '@vuelidate/validators'
 import useVuelidate from '@vuelidate/core'
-import { useModalStore } from '@/scripts/stores/modal.store'
+import { useLookupDialog } from '@/scripts/composables/use-lookup-dialog'
 import { useCompanyStore } from '@/scripts/stores/company.store'
 import { useNotificationStore } from '@/scripts/stores/notification.store'
 import { taxTypeService } from '@/scripts/api/services/tax-type.service'
 import type { CreateTaxTypePayload } from '@/scripts/api/services/tax-type.service'
+import type {
+  TaxType,
+  TaxTypeTransactionType,
+} from '@/scripts/types/domain/tax'
 
 interface TaxTypeForm {
   id: number | null
   name: string
   calculation_type: string
+  transaction_type: TaxTypeTransactionType
   percent: number
   fixed_amount: number
+  compound_tax: boolean
   description: string
 }
 
-const modalStore = useModalStore()
+interface TaxTypeModalContext {
+  transaction_type?: TaxTypeTransactionType
+}
+
+const props = withDefaults(
+  defineProps<{
+    show?: boolean
+    title?: string
+    data?: unknown
+    lockTransactionType?: boolean
+  }>(),
+  { show: undefined, title: '', data: undefined, lockTransactionType: false },
+)
+const emit = defineEmits<{ close: []; saved: [record: unknown] }>()
+const dialog = useLookupDialog(props, 'TaxTypeModal', {
+  close: () => emit('close'),
+  saved: (record) => emit('saved', record),
+})
 const companyStore = useCompanyStore()
 const notificationStore = useNotificationStore()
 const { t } = useI18n()
@@ -36,15 +59,21 @@ const currentTaxType = ref<TaxTypeForm>({
   id: null,
   name: '',
   calculation_type: 'percentage',
+  transaction_type: 'sales',
   percent: 0,
   fixed_amount: 0,
+  compound_tax: false,
   description: '',
 })
 
 const defaultCurrency = computed(() => companyStore.selectedCompanyCurrency)
 
-const modalActive = computed<boolean>(
-  () => modalStore.active && modalStore.componentName === 'TaxTypeModal'
+const modalActive = dialog.active
+
+const showCompoundToggle = computed<boolean>(
+  () =>
+    currentTaxType.value.calculation_type === 'percentage' &&
+    currentTaxType.value.transaction_type === 'sales',
 )
 
 const rules = computed(() => ({
@@ -52,17 +81,20 @@ const rules = computed(() => ({
     required: helpers.withMessage(t('validation.required'), required),
     minLength: helpers.withMessage(
       t('validation.name_min_length', { count: 3 }),
-      minLength(3)
+      minLength(3),
     ),
   },
   calculation_type: {
+    required: helpers.withMessage(t('validation.required'), required),
+  },
+  transaction_type: {
     required: helpers.withMessage(t('validation.required'), required),
   },
   percent: {
     required: helpers.withMessage(t('validation.required'), required),
     between: helpers.withMessage(
       t('validation.enter_valid_tax_rate'),
-      between(-100, 100)
+      between(-100, 100),
     ),
   },
   fixed_amount: {
@@ -71,7 +103,7 @@ const rules = computed(() => ({
   description: {
     maxLength: helpers.withMessage(
       t('validation.description_maxlength', { count: 255 }),
-      maxLength(255)
+      maxLength(255),
     ),
   },
 }))
@@ -85,24 +117,44 @@ const fixedAmount = computed<number>({
   },
 })
 
+watch(
+  [
+    () => currentTaxType.value.calculation_type,
+    () => currentTaxType.value.transaction_type,
+  ],
+  () => {
+    if (!showCompoundToggle.value) {
+      currentTaxType.value.compound_tax = false
+    }
+  },
+)
+
 async function setInitialData(): Promise<void> {
-  if (modalStore.data && typeof modalStore.data === 'number') {
+  dialog.clearErrors()
+  v$.value.$reset()
+  if (dialog.data.value && typeof dialog.data.value === 'number') {
     isEdit.value = true
-    const response = await taxTypeService.get(modalStore.data)
+    const response = await taxTypeService.get(dialog.data.value)
     if (response.data) {
       const tax = response.data
       currentTaxType.value = {
         id: tax.id,
         name: tax.name,
         calculation_type: tax.calculation_type ?? 'percentage',
+        transaction_type: tax.transaction_type,
         percent: tax.percent,
         fixed_amount: tax.fixed_amount,
+        compound_tax: tax.compound_tax ?? false,
         description: tax.description ?? '',
       }
     }
   } else {
     isEdit.value = false
     resetForm()
+    const context = getModalContext(dialog.data.value)
+    if (context?.transaction_type) {
+      currentTaxType.value.transaction_type = context.transaction_type
+    }
   }
 }
 
@@ -113,23 +165,32 @@ async function submitTaxTypeData(): Promise<void> {
   }
 
   isSaving.value = true
+  dialog.clearErrors()
   try {
     const payload: CreateTaxTypePayload = {
       name: currentTaxType.value.name,
       percent: currentTaxType.value.percent,
       fixed_amount: currentTaxType.value.fixed_amount,
       calculation_type: currentTaxType.value.calculation_type,
+      transaction_type: currentTaxType.value.transaction_type,
+      compound_tax: currentTaxType.value.compound_tax,
       description: currentTaxType.value.description || null,
     }
 
+    let savedTaxType: TaxType
     if (isEdit.value && currentTaxType.value.id) {
-      await taxTypeService.update(currentTaxType.value.id, payload)
+      const response = await taxTypeService.update(
+        currentTaxType.value.id,
+        payload,
+      )
+      savedTaxType = response.data
       notificationStore.showNotification({
         type: 'success',
         message: 'settings.tax_types.updated_message',
       })
     } else {
-      await taxTypeService.create(payload)
+      const response = await taxTypeService.create(payload)
+      savedTaxType = response.data
       notificationStore.showNotification({
         type: 'success',
         message: 'settings.tax_types.created_message',
@@ -137,11 +198,10 @@ async function submitTaxTypeData(): Promise<void> {
     }
 
     isSaving.value = false
-    if (modalStore.refreshData) {
-      modalStore.refreshData()
-    }
+    dialog.saved(savedTaxType)
     closeTaxTypeModal()
-  } catch {
+  } catch (error) {
+    dialog.fail(error)
     isSaving.value = false
   }
 }
@@ -151,50 +211,68 @@ function resetForm(): void {
     id: null,
     name: '',
     calculation_type: 'percentage',
+    transaction_type: 'sales',
     percent: 0,
     fixed_amount: 0,
+    compound_tax: false,
     description: '',
   }
 }
 
+function getModalContext(data: unknown): TaxTypeModalContext | null {
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('transaction_type' in data)
+  ) {
+    return null
+  }
+
+  const transactionType = data.transaction_type
+  if (transactionType !== 'sales' && transactionType !== 'purchases') {
+    return null
+  }
+
+  return { transaction_type: transactionType }
+}
+
 function closeTaxTypeModal(): void {
-  modalStore.closeModal()
-  setTimeout(() => {
-    resetForm()
-    isEdit.value = false
-    v$.value.$reset()
-  }, 300)
+  if (!isSaving.value) dialog.close()
 }
 </script>
 
 <template>
   <BaseModal
     :show="modalActive"
+    :closable="!isSaving"
     @close="closeTaxTypeModal"
     @open="setInitialData"
   >
     <template #header>
-      <div class="flex justify-between w-full">
-        {{ modalStore.title }}
-        <BaseIcon
-          name="XMarkIcon"
-          class="h-6 w-6 text-muted cursor-pointer"
-          @click="closeTaxTypeModal"
-        />
-      </div>
+      {{ dialog.title.value }}
     </template>
-    <form action="" @submit.prevent="submitTaxTypeData">
+    <form action="" @submit.stop.prevent="submitTaxTypeData">
+      <p
+        v-if="dialog.error.value"
+        role="alert"
+        class="px-6 pt-4 text-sm text-danger"
+      >
+        {{ dialog.error.value }}
+      </p>
       <div class="p-4 sm:p-6">
         <BaseInputGrid layout="one-column">
           <BaseInputGroup
             :label="$t('tax_types.name')"
             variant="horizontal"
-            :error="v$.name.$error && v$.name.$errors[0].$message"
+            :error="
+              dialog.errors.value.name?.[0] ||
+              (v$.name.$error && v$.name.$errors[0].$message)
+            "
             required
           >
             <BaseInput
               v-model="currentTaxType.name"
-              :invalid="v$.name.$error"
+              :invalid="v$.name.$error || !!dialog.errors.value.name"
               type="text"
               @input="v$.name.$touch()"
             />
@@ -202,6 +280,7 @@ function closeTaxTypeModal(): void {
 
           <BaseInputGroup
             :label="$t('tax_types.tax_type')"
+            :error="dialog.errors.value.calculation_type?.[0]"
             variant="horizontal"
             required
           >
@@ -220,8 +299,39 @@ function closeTaxTypeModal(): void {
           </BaseInputGroup>
 
           <BaseInputGroup
+            :label="$t('tax_types.used_for')"
+            :error="
+              dialog.errors.value.transaction_type?.[0] ||
+              (v$.transaction_type.$error &&
+                v$.transaction_type.$errors[0].$message)
+            "
+            variant="horizontal"
+            required
+          >
+            <BaseSelectInput
+              v-model="currentTaxType.transaction_type"
+              :disabled="lockTransactionType"
+              :invalid="v$.transaction_type.$error"
+              :options="[
+                { id: 'sales', label: $t('tax_types.sales') },
+                { id: 'purchases', label: $t('tax_types.purchases') },
+              ]"
+              :allow-empty="false"
+              value-prop="id"
+              label-prop="label"
+              track-by="label"
+              :searchable="false"
+              @update:model-value="v$.transaction_type.$touch()"
+            />
+          </BaseInputGroup>
+
+          <BaseInputGroup
             v-if="currentTaxType.calculation_type === 'percentage'"
             :label="$t('tax_types.percent')"
+            :error="
+              dialog.errors.value.percent?.[0] ||
+              (v$.percent.$error && v$.percent.$errors[0].$message)
+            "
             variant="horizontal"
             required
           >
@@ -240,6 +350,10 @@ function closeTaxTypeModal(): void {
           <BaseInputGroup
             v-else
             :label="$t('tax_types.fixed_amount')"
+            :error="
+              dialog.errors.value.fixed_amount?.[0] ||
+              (v$.fixed_amount.$error && v$.fixed_amount.$errors[0].$message)
+            "
             variant="horizontal"
             required
           >
@@ -247,9 +361,19 @@ function closeTaxTypeModal(): void {
           </BaseInputGroup>
 
           <BaseInputGroup
+            v-if="showCompoundToggle"
+            :label="$t('tax_types.compound_tax')"
+            :help-text="$t('settings.tax_types.compound_tax_description')"
+            variant="horizontal"
+          >
+            <BaseSwitch v-model="currentTaxType.compound_tax" />
+          </BaseInputGroup>
+
+          <BaseInputGroup
             :label="$t('tax_types.description')"
             :error="
-              v$.description.$error && v$.description.$errors[0].$message
+              dialog.errors.value.description?.[0] ||
+              (v$.description.$error && v$.description.$errors[0].$message)
             "
             variant="horizontal"
           >
@@ -267,7 +391,7 @@ function closeTaxTypeModal(): void {
         class="z-0 flex justify-end p-4 border-t border-solid border-line-default"
       >
         <BaseButton
-          class="mr-3 text-sm"
+          class="me-3 text-sm"
           variant="primary-outline"
           type="button"
           @click="closeTaxTypeModal"

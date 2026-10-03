@@ -1,0 +1,15 @@
+export type {
+  BootstrapCompletedEvent,
+  CompanyChangeEvent,
+  ComponentExtensionContribution,
+  ExtensionContribution,
+  ExtensionVisibilityPredicate,
+  InvoiceShelfExtensionApi,
+  InvoiceShelfExtensionEvents,
+  PageChildContribution,
+  PageContribution,
+  PageRouteMeta,
+  RichEditorContext,
+  SettingsNavigationContribution,
+  SettingsPageContribution,
+} from '../../../vendor/invoiceshelf/modules/frontend/index'

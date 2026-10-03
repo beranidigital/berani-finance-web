@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../../../../stores/global.store'
 import { useUserStore } from '../../../../stores/user.store'
+import { extensionItems, extensionRegistry } from '@/scripts/extensions/runtime'
 
 interface SettingMenuItem {
   title: string
@@ -33,6 +34,14 @@ const dropdownMenuItems = computed<DropdownMenuItem[]>(() => {
     title: t(item.title),
   }))
 
+  items.push(
+    ...extensionItems(extensionRegistry.companySettingsNavigation.value).map((item) => ({
+      title: t(item.title),
+      link: router.resolve(item.to).fullPath,
+      icon: item.icon,
+    })),
+  )
+
   if (showDangerZone.value) {
     items.push({
       title: t('settings.company_info.danger_zone'),
@@ -43,6 +52,12 @@ const dropdownMenuItems = computed<DropdownMenuItem[]>(() => {
 
   return items
 })
+
+const sidebarMenuItems = computed<DropdownMenuItem[]>(() =>
+  dropdownMenuItems.value.filter(
+    (item) => item.link !== '/admin/settings/danger-zone',
+  ),
+)
 
 watchEffect(() => {
   if (route.path === '/admin/settings') {
@@ -87,6 +102,7 @@ function navigateToSetting(setting: DropdownMenuItem): void {
         track-by="title"
         label="title"
         object
+        :aria-label="$t('navigation.settings')"
         @update:model-value="navigateToSetting"
       />
     </div>
@@ -95,9 +111,9 @@ function navigateToSetting(setting: DropdownMenuItem): void {
       <div class="hidden mt-1 xl:block min-w-[240px] sticky top-20 self-start">
         <BaseList>
           <BaseListItem
-            v-for="(menuItem, index) in globalStore.settingMenu"
+            v-for="(menuItem, index) in sidebarMenuItems"
             :key="index"
-            :title="$t(menuItem.title)"
+            :title="menuItem.title"
             :to="menuItem.link"
             :active="hasActiveUrl(menuItem.link)"
             :index="index"
@@ -115,11 +131,11 @@ function navigateToSetting(setting: DropdownMenuItem): void {
           :class="[
             'cursor-pointer px-3 py-2 mt-1 text-sm font-medium leading-5 flex items-center rounded-lg transition-colors',
             hasActiveUrl('/admin/settings/danger-zone')
-              ? 'text-red-600 bg-red-50 font-semibold'
-              : 'text-red-500 hover:bg-red-50 hover:text-red-600',
+              ? 'text-danger bg-hover-strong font-semibold'
+              : 'text-danger hover:bg-hover-strong',
           ]"
         >
-          <span class="mr-3">
+          <span class="me-3">
             <BaseIcon name="ExclamationTriangleIcon" />
           </span>
           <span>{{ $t('settings.company_info.danger_zone') }}</span>

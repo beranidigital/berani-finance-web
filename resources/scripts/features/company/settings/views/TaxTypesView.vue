@@ -19,7 +19,7 @@ interface TableColumn {
 interface FetchParams {
   page: number
   filter: Record<string, unknown>
-  sort: { fieldName: string; order: string }
+  sort: { fieldName: string; order: 'asc' | 'desc' }
 }
 
 interface FetchResult {
@@ -67,9 +67,15 @@ const taxTypeColumns = computed<TableColumn[]>(() => [
     tdClass: 'font-medium text-heading',
   },
   {
+    key: 'transaction_type',
+    label: t('tax_types.used_for'),
+    thClass: 'extra',
+    tdClass: 'font-medium text-heading',
+  },
+  {
     key: 'actions',
     label: '',
-    tdClass: 'text-right text-sm font-medium',
+    tdClass: 'text-end text-sm font-medium',
     sortable: false,
   },
 ])
@@ -140,11 +146,11 @@ async function fetchData({ page, sort }: FetchParams): Promise<FetchResult> {
   const response = await taxTypeService.list(data)
 
   return {
-    data: (response as Record<string, unknown>).data as unknown[],
+    data: response.data,
     pagination: {
-      totalPages: ((response as Record<string, unknown>).meta as Record<string, number>).last_page,
+      totalPages: response.meta.last_page,
       currentPage: page,
-      totalCount: ((response as Record<string, unknown>).meta as Record<string, number>).total,
+      totalCount: response.meta.total,
       limit: 5,
     },
   }
@@ -159,6 +165,7 @@ function openTaxModal(): void {
     title: t('settings.tax_types.add_tax'),
     componentName: 'TaxTypeModal',
     size: 'sm',
+    data: { transaction_type: 'sales' },
     refreshData: table.value?.refresh,
   })
 }
@@ -188,6 +195,9 @@ function openTaxModal(): void {
     >
       <template #cell-calculation_type="{ row }">
         {{ $t(`settings.tax_types.${row.data.calculation_type}`) }}
+        <BaseBadge v-if="row.data.compound_tax" class="ms-2">
+          {{ $t('tax_types.compound_tax') }}
+        </BaseBadge>
       </template>
 
       <template #cell-amount="{ row }">
@@ -200,12 +210,37 @@ function openTaxModal(): void {
         <template v-else> - </template>
       </template>
 
+      <template #cell-transaction_type="{ row }">
+        <BaseBadge>
+          {{ $t(`tax_types.${row.data.transaction_type}`) }}
+        </BaseBadge>
+      </template>
+
       <template v-if="hasAtleastOneAbility()" #cell-actions="{ row }">
         <TaxTypeDropdown
           :row="row.data"
           :table="table"
           :load-data="refreshTable"
         />
+      </template>
+      <!-- Nothing here yet: say what goes here and offer to add the first -->
+      <template #empty>
+        <BaseEmptyPlaceholder
+          compact
+          art="tax"
+          :ghost="4"
+          :title="$t('settings.tax_types.empty_title')"
+          :description="$t('settings.tax_types.empty_description')"
+        >
+          <template v-if="userStore.hasAbilities(ABILITIES.CREATE_TAX_TYPE)" #actions>
+            <BaseButton variant="primary-outline" @click="openTaxModal">
+              <template #left="slotProps">
+                <BaseIcon name="PlusIcon" :class="slotProps.class" />
+              </template>
+              {{ $t('settings.tax_types.add_new_tax') }}
+            </BaseButton>
+          </template>
+        </BaseEmptyPlaceholder>
       </template>
     </BaseTable>
 

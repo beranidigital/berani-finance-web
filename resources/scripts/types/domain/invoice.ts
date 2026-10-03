@@ -5,6 +5,18 @@ import type { Currency } from './currency'
 import type { Tax } from './tax'
 import type { CustomFieldValue } from './custom-field'
 
+export interface InvoicePaymentAllocation {
+  id: number
+  payment_id: number
+  amount: number
+  base_amount?: number
+  payment?: {
+    id: number
+    payment_number: string
+    formatted_payment_date?: string
+  }
+}
+
 export enum InvoiceStatus {
   DRAFT = 'DRAFT',
   SENT = 'SENT',
@@ -19,6 +31,28 @@ export enum InvoicePaidStatus {
 }
 
 export type DiscountType = 'fixed' | 'percentage'
+
+export type InvoiceType = 'INVOICE' | 'CREDIT_NOTE'
+
+export interface CreditNoteRef {
+  id: number
+  invoice_number: string
+}
+
+/**
+ * How much of an invoice has been reversed by credit notes: nothing, some of
+ * it, or all of it. Emitted by the API alongside `credited_total`.
+ */
+export type CreditedStatus = 'NONE' | 'PARTIAL' | 'FULL'
+
+export interface RelatedInvoice {
+  id: number
+  invoice_number: string
+  invoice_date: string
+  formatted_invoice_date: string
+  total: number
+  unique_hash: string
+}
 
 export interface InvoiceItem {
   id: number | string
@@ -51,6 +85,16 @@ export interface Invoice {
   due_date: string
   invoice_number: string
   reference_number: string | null
+  type: InvoiceType
+  related_invoice_id: number | null
+  related_invoice?: RelatedInvoice | null
+  credit_notes?: CreditNoteRef[]
+  credit_reason?: string | null
+  /** Amount already credited off this invoice, as a positive number of cents. */
+  credited_total?: number
+  credited_status?: CreditedStatus
+  /** Credited quantity per original invoice item, keyed by invoice_items.id. */
+  credited_quantities?: Record<string, number>
   status: InvoiceStatus
   paid_status: InvoicePaidStatus
   tax_per_item: string | null
@@ -88,6 +132,7 @@ export interface Invoice {
   sales_tax_type: string | null
   sales_tax_address_type: string | null
   overdue: boolean | null
+  payment_allocations?: InvoicePaymentAllocation[]
   items?: InvoiceItem[]
   customer?: Customer
   creator?: User
@@ -117,6 +162,21 @@ export interface CreateInvoicePayload {
   taxes?: Partial<Tax>[]
   customFields?: CustomFieldValue[]
   fields?: CustomFieldValue[]
+}
+
+export interface CreditNoteItemPayload {
+  /** id of the ORIGINAL invoice item being credited. */
+  id: number
+  quantity: number
+}
+
+/**
+ * Payload for POST /invoices/{id}/credit-note. An absent or empty `items` list
+ * credits every remaining quantity, which is the full reversal.
+ */
+export interface CreateCreditNotePayload {
+  items?: CreditNoteItemPayload[]
+  reason?: string | null
 }
 
 export interface CreateInvoiceItemPayload {

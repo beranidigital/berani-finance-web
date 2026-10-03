@@ -1,7 +1,7 @@
 <template>
   <BasePage class="relative estimate-create-page">
     <form @submit.prevent="submitForm">
-      <BasePageHeader :title="pageTitle">
+      <BasePageHeader :help="$t('page_help.estimates')" :title="pageTitle">
         <BaseBreadcrumb>
           <BaseBreadcrumbItem :title="$t('general.home')" to="/admin/dashboard" />
           <BaseBreadcrumbItem
@@ -17,13 +17,15 @@
           <BaseBreadcrumbItem v-else :title="$t('estimates.new_estimate')" to="#" active />
         </BaseBreadcrumb>
 
-        <template #actions>
+        <!-- Phones get these in the bottom bar instead -->
+        <template v-if="!isPhone" #actions>
           <router-link
             v-if="isEdit"
             :to="`/estimates/pdf/${estimateStore.newEstimate.unique_hash}`"
             target="_blank"
+            class="inline-flex rounded-lg me-3"
           >
-            <BaseButton class="mr-3" variant="primary-outline" type="button">
+            <BaseButton tag="span" variant="primary-outline">
               <span class="flex">
                 {{ $t('general.view_pdf') }}
               </span>
@@ -49,6 +51,15 @@
         </template>
       </BasePageHeader>
 
+      <DocumentFormActionBar
+        :total="estimateStore.getTotal"
+        :currency="estimateStore.newEstimate.selectedCurrency"
+        :save-label="$t('estimates.save_estimate')"
+        :saving="isSaving"
+        :loading="isLoadingContent"
+        :pdf-url="isEdit ? `/estimates/pdf/${estimateStore.newEstimate.unique_hash}` : null"
+      />
+
       <!-- Select Customer & Basic Fields -->
       <EstimateBasicFields
         :v="v$"
@@ -62,6 +73,7 @@
           :currency="estimateStore.newEstimate.selectedCurrency"
           :is-loading="isLoadingContent"
           :item-validation-scope="estimateValidationScope"
+          :tax-included-setting="companyStore.selectedCompanySettings.tax_included"
           :store="estimateStore"
           store-prop="newEstimate"
         />
@@ -115,9 +127,17 @@ import {
 } from '@vuelidate/validators'
 import useVuelidate from '@vuelidate/core'
 import { useEstimateStore } from '../store'
+import { useCompanyStore } from '@/scripts/stores/company.store'
+import { useNotificationStore } from '@/scripts/stores/notification.store'
+import { useBreakpoints } from '@/scripts/composables/use-breakpoints'
+import {
+  handleApiError,
+  getErrorTranslationKey,
+} from '@/scripts/utils/error-handling'
 import EstimateBasicFields from '../components/EstimateBasicFields.vue'
 import {
   DocumentItemsTable,
+  DocumentFormActionBar,
   DocumentTotals,
   DocumentNotes,
   TemplateSelectButton,
@@ -125,9 +145,12 @@ import {
 } from '../../../shared/document-form'
 
 const estimateStore = useEstimateStore()
+const companyStore = useCompanyStore()
+const notificationStore = useNotificationStore()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const { isPhone } = useBreakpoints()
 
 const estimateValidationScope = 'newEstimate'
 const isSaving = ref<boolean>(false)
@@ -192,40 +215,39 @@ async function submitForm(): Promise<void> {
   v$.value.$touch()
 
   if (v$.value.$invalid) {
-    console.log('Estimate form invalid. Errors:', JSON.stringify(
-      v$.value.$errors.map((e: { $property: string; $message: string }) => `${e.$property}: ${e.$message}`)
-    ))
+    // The first invalid field, often the customer, takes focus on its own
+    notificationStore.showNotification({ type: 'error', message: t('general.check_highlighted_fields') })
     return
   }
 
   isSaving.value = true
 
-  const data: Record<string, unknown> = {
-    ...cloneDeep(estimateStore.newEstimate),
-    sub_total: Math.round(estimateStore.getSubTotal),
-    total: Math.round(estimateStore.getTotal),
-    tax: Math.round(estimateStore.getTotalTax),
-  }
-
-  const items = data.items as Array<Record<string, unknown>>
-  if (data.discount_per_item === 'YES') {
-    items.forEach((item, index) => {
-      if (item.discount_type === 'fixed') {
-        items[index].discount = Math.round((item.discount as number) * 100)
-      }
-    })
-  } else {
-    if (data.discount_type === 'fixed') {
-      data.discount = Math.round((data.discount as number) * 100)
-    }
-  }
-
-  const taxes = data.taxes as Array<Record<string, unknown>>
-  if (data.tax_per_item !== 'YES' && taxes.length) {
-    data.tax_type_ids = taxes.map((tax) => tax.tax_type_id)
-  }
-
   try {
+    const data: Record<string, unknown> = {
+      ...cloneDeep(estimateStore.newEstimate),
+      sub_total: Math.round(estimateStore.getSubTotal),
+      total: Math.round(estimateStore.getTotal),
+      tax: Math.round(estimateStore.getTotalTax),
+    }
+
+    const items = data.items as Array<Record<string, unknown>>
+    if (data.discount_per_item === 'YES') {
+      items.forEach((item, index) => {
+        if (item.discount_type === 'fixed') {
+          items[index].discount = Math.round((item.discount as number) * 100)
+        }
+      })
+    } else {
+      if (data.discount_type === 'fixed') {
+        data.discount = Math.round((data.discount as number) * 100)
+      }
+    }
+
+    const taxes = data.taxes as Array<Record<string, unknown>>
+    if (data.tax_per_item !== 'YES' && taxes.length) {
+      data.tax_type_ids = taxes.map((tax) => tax.tax_type_id)
+    }
+
     const action = isEdit.value
       ? estimateStore.updateEstimate
       : estimateStore.addEstimate
@@ -234,10 +256,16 @@ async function submitForm(): Promise<void> {
     if (res.data.data) {
       router.push(`/admin/estimates/${res.data.data.id}/view`)
     }
-  } catch (err) {
-    console.error(err)
-  }
+  } catch (err: unknown) {
+    const normalized = handleApiError(err)
+    const translationKey = getErrorTranslationKey(normalized.message)
 
-  isSaving.value = false
+    notificationStore.showNotification({
+      type: 'error',
+      message: translationKey ? t(translationKey) : normalized.message,
+    })
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>

@@ -22,15 +22,16 @@ import type {
   DocumentItem,
 } from '../../shared/document-form/use-document-calculations'
 import { generateClientId } from '../../../utils'
+import {
+  frequencyPresets,
+  type FrequencyOption,
+} from '../../../components/recurrence/use-frequency-presets'
 
 // ----------------------------------------------------------------
 // Frequency options
 // ----------------------------------------------------------------
 
-export interface FrequencyOption {
-  label: string
-  value: string
-}
+export type { FrequencyOption }
 
 // ----------------------------------------------------------------
 // Stub factories
@@ -86,6 +87,8 @@ export interface RecurringInvoiceFormData {
   limit_count: number | null
   limit_date: string | null
   send_automatically: boolean
+  notify_creator: boolean
+  last_error?: string | null
   notes: string | null
   discount: number
   discount_type: DiscountType
@@ -126,6 +129,7 @@ function createRecurringInvoiceStub(): RecurringInvoiceFormData {
     limit_count: null,
     limit_date: null,
     send_automatically: false,
+    notify_creator: false,
     notes: '',
     discount: 0,
     discount_type: 'fixed',
@@ -192,10 +196,22 @@ export const useRecurringInvoiceStore = defineStore('recurring-invoice', {
     },
 
     getNetTotal(): number {
-      return this.getSubtotalWithDiscount - this.getTotalTax
+      if (this.newRecurringInvoice.tax_included) {
+        return this.getSubtotalWithDiscount - this.getTotalSimpleTax
+      }
+
+      return this.getSubtotalWithDiscount
     },
 
     getTotalSimpleTax(state): number {
+      if (state.newRecurringInvoice.tax_per_item === 'YES') {
+        return state.newRecurringInvoice.items.reduce((sum: number, item: DocumentItem) => {
+          return sum + (item.taxes ?? []).reduce((itemSum, tax) => {
+            return tax.compound_tax ? itemSum : itemSum + (tax.amount ?? 0)
+          }, 0)
+        }, 0)
+      }
+
       return state.newRecurringInvoice.taxes.reduce(
         (sum: number, tax: DocumentTax) => {
           if (!tax.compound_tax) return sum + (tax.amount ?? 0)
@@ -206,6 +222,14 @@ export const useRecurringInvoiceStore = defineStore('recurring-invoice', {
     },
 
     getTotalCompoundTax(state): number {
+      if (state.newRecurringInvoice.tax_per_item === 'YES') {
+        return state.newRecurringInvoice.items.reduce((sum: number, item: DocumentItem) => {
+          return sum + (item.taxes ?? []).reduce((itemSum, tax) => {
+            return tax.compound_tax ? itemSum + (tax.amount ?? 0) : itemSum
+          }, 0)
+        }, 0)
+      }
+
       return state.newRecurringInvoice.taxes.reduce(
         (sum: number, tax: DocumentTax) => {
           if (tax.compound_tax) return sum + (tax.amount ?? 0)
@@ -216,16 +240,7 @@ export const useRecurringInvoiceStore = defineStore('recurring-invoice', {
     },
 
     getTotalTax(): number {
-      if (
-        this.newRecurringInvoice.tax_per_item === 'NO' ||
-        this.newRecurringInvoice.tax_per_item === null
-      ) {
-        return this.getTotalSimpleTax + this.getTotalCompoundTax
-      }
-      return this.newRecurringInvoice.items.reduce(
-        (sum: number, item: DocumentItem) => sum + (item.tax ?? 0),
-        0,
-      )
+      return this.getTotalSimpleTax + this.getTotalCompoundTax
     },
 
     getSubtotalWithDiscount(): number {
@@ -234,7 +249,7 @@ export const useRecurringInvoiceStore = defineStore('recurring-invoice', {
 
     getTotal(): number {
       if (this.newRecurringInvoice.tax_included) {
-        return this.getSubtotalWithDiscount
+        return this.getSubtotalWithDiscount + this.getTotalCompoundTax
       }
       return this.getSubtotalWithDiscount + this.getTotalTax
     },
@@ -242,23 +257,7 @@ export const useRecurringInvoiceStore = defineStore('recurring-invoice', {
 
   actions: {
     initFrequencies(t: (key: string) => string): void {
-      this.frequencies = [
-        // Common business intervals
-        { label: t('recurring_invoices.frequency.every_week'), value: '0 0 * * 0' },
-        { label: t('recurring_invoices.frequency.every_2_weeks'), value: '0 0 */14 * *' },
-        { label: t('recurring_invoices.frequency.every_month'), value: '0 0 1 * *' },
-        { label: t('recurring_invoices.frequency.every_2_months'), value: '0 0 1 */2 *' },
-        { label: t('recurring_invoices.frequency.every_quarter'), value: '0 0 1 */3 *' },
-        { label: t('recurring_invoices.frequency.every_6_month'), value: '0 0 1 */6 *' },
-        { label: t('recurring_invoices.frequency.every_year'), value: '0 0 1 1 *' },
-        // Less common intervals
-        { label: t('recurring_invoices.frequency.every_day'), value: '0 0 * * *' },
-        { label: t('recurring_invoices.frequency.every_15_days_at_midnight'), value: '0 5 */15 * *' },
-        { label: t('recurring_invoices.frequency.every_hour'), value: '0 * * * *' },
-        { label: t('recurring_invoices.frequency.every_minute'), value: '* * * * *' },
-        // Custom cron expression
-        { label: t('recurring_invoices.frequency.custom'), value: 'CUSTOM' },
-      ]
+      this.frequencies = frequencyPresets(t)
     },
 
     resetCurrentRecurringInvoice(): void {
@@ -381,9 +380,13 @@ export const useRecurringInvoiceStore = defineStore('recurring-invoice', {
     async updateRecurringInvoice(
       data: Record<string, unknown>,
     ): Promise<{ data: { data: RecurringInvoice } }> {
+      // A completed schedule keeps its status; the server makes it active
+      // again when a raised limit leaves runs to make.
+      const { status, ...rest } = data
+      const payload = status === 'COMPLETED' ? rest : data
       const response = await recurringInvoiceService.update(
         data.id as number,
-        data as never,
+        payload as never,
       )
       const pos = this.recurringInvoices.findIndex(
         (inv) => inv.id === response.data.id,
@@ -511,6 +514,9 @@ export const useRecurringInvoiceStore = defineStore('recurring-invoice', {
       if (!isEdit && companySettings) {
         this.newRecurringInvoice.tax_per_item =
           companySettings.tax_per_item ?? null
+        this.newRecurringInvoice.tax_included =
+          companySettings.tax_included === 'YES' &&
+          companySettings.tax_included_by_default === 'YES'
         this.newRecurringInvoice.discount_per_item =
           companySettings.discount_per_item ?? null
         this.newRecurringInvoice.sales_tax_type =

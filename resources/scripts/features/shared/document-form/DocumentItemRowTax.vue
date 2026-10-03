@@ -1,12 +1,13 @@
 <template>
   <div class="flex items-center justify-between mb-3">
     <div class="flex items-center text-base" style="flex: 4">
-      <label class="pr-2 mb-0" align="right">
+      <span class="pe-2 mb-0" aria-hidden="true">
         {{ $t('invoices.item.tax') }}
-      </label>
+      </span>
 
       <BaseMultiselect
         v-model="selectedTax"
+        :aria-label="$t('invoices.item.tax')"
         value-prop="id"
         :options="filteredTypes"
         :placeholder="$t('general.select_a_tax')"
@@ -18,7 +19,7 @@
         @update:model-value="onSelectTax"
       >
         <template #singlelabel="{ value }">
-          <div class="absolute left-3.5">
+          <div class="absolute start-3.5">
             {{ value.name }} -
             <template v-if="value.calculation_type === 'fixed'">
               <BaseFormatMoney :amount="value.fixed_amount" :currency="currency" />
@@ -37,33 +38,38 @@
           <template v-else>
             {{ option.percent }} %
           </template>
+          <BaseBadge v-if="option.compound_tax" class="ms-2 text-xs">
+            {{ $t('tax_types.compound_tax') }}
+          </BaseBadge>
         </template>
 
         <template v-if="canAddTax" #action>
           <button
             type="button"
-            class="flex items-center justify-center w-full px-2 py-2 bg-surface-muted border-none outline-hidden cursor-pointer"
+            class="flex items-center justify-center w-full px-2 py-2 bg-surface-muted border-none outline-hidden cursor-pointer text-primary-600 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
             @click="openTaxModal"
           >
-            <BaseIcon name="CheckCircleIcon" class="h-5 text-primary-400" />
-            <label class="ml-2 text-sm leading-none cursor-pointer text-primary-400">
+            <BaseIcon name="CheckCircleIcon" class="h-5" />
+            <span class="ms-2 text-sm leading-none">
               {{ $t('invoices.add_new_tax') }}
-            </label>
+            </span>
           </button>
         </template>
       </BaseMultiselect>
       <br />
     </div>
 
-    <div class="text-sm text-right" style="flex: 3">
+    <div class="text-sm text-end" style="flex: 3">
       <BaseFormatMoney :amount="taxAmount" :currency="currency" />
     </div>
 
-    <div class="flex items-center justify-center w-6 h-10 mx-2 cursor-pointer">
-      <BaseIcon
+    <div class="flex items-center justify-center w-8 h-10 mx-1">
+      <BaseIconButton
         v-if="taxes.length && index !== taxes.length - 1"
-        name="TrashIcon"
-        class="h-5 text-body cursor-pointer"
+        icon="TrashIcon"
+        :label="$t('general.remove_named', { name: taxData.name || $t('invoices.item.tax') })"
+        size="sm"
+        tone="danger"
         @click="removeTax(index)"
       />
     </div>
@@ -77,9 +83,9 @@ import { useModalStore } from '../../../stores/modal.store'
 import type { TaxType } from '../../../types/domain/tax'
 import type { Currency } from '../../../types/domain/currency'
 import type { DocumentFormData, DocumentTax } from './use-document-calculations'
+import { calcTaxAmount } from './use-document-calculations'
 
 interface Props {
-  ability: string
   store: Record<string, unknown>
   storeProp: string
   itemIndex: number
@@ -87,20 +93,25 @@ interface Props {
   taxData: DocumentTax
   taxes: DocumentTax[]
   total: number
-  totalTax: number
+  /** Sum of the item's non-compound tax amounts, i.e. the compound base widener. */
+  totalSimpleTax: number
   discountedTotal: number
   currency: Currency | Record<string, unknown>
   updateItems: () => void
+  taxTypes?: TaxType[]
+  canAddTax?: boolean
   discount?: number
 }
 
 interface Emits {
   (e: 'remove', index: number): void
   (e: 'update', payload: { index: number; item: DocumentTax }): void
+  (e: 'taxTypeCreated', taxType: TaxType): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  ability: '',
+  taxTypes: () => [],
+  canAddTax: false,
   discount: 0,
 })
 
@@ -109,24 +120,13 @@ const emit = defineEmits<Emits>()
 const { t } = useI18n()
 const modalStore = useModalStore()
 
-// We assume these stores are available globally or injected
-// In the v2 arch, we'll use a lighter approach
-const taxTypes = computed<TaxType[]>(() => {
-  // Access taxTypeStore through the store's taxTypes or a global store
-  return (window as Record<string, unknown>).__taxTypes as TaxType[] ?? []
-})
-
-const canAddTax = computed(() => {
-  return (window as Record<string, unknown>).__userHasAbility?.(props.ability) ?? false
-})
-
 const selectedTax = ref<TaxType | null>(null)
 const localTax = reactive<DocumentTax>({ ...props.taxData })
 
 const storeData = computed(() => props.store[props.storeProp] as DocumentFormData)
 
 const filteredTypes = computed<(TaxType & { disabled?: boolean })[]>(() => {
-  const clonedTypes = taxTypes.value.map((a) => ({ ...a, disabled: false }))
+  const clonedTypes = props.taxTypes.map((a) => ({ ...a, disabled: false }))
 
   return clonedTypes.map((taxType) => {
     const found = props.taxes.find((tax) => tax.tax_type_id === taxType.id)
@@ -135,27 +135,52 @@ const filteredTypes = computed<(TaxType & { disabled?: boolean })[]>(() => {
   })
 })
 
+/**
+ * The item's taxable base, shared by every tax branch.
+ *
+ * With a per-item discount the item total is already net of it. With a
+ * document-level discount the item carries its proportional share of that
+ * discount instead.
+ */
+const effectiveBase = computed<number>(() => {
+  if (storeData.value.discount_per_item === 'YES') {
+    return props.discountedTotal
+  }
+
+  const modelDiscount = storeData.value.discount ?? 0
+
+  if (modelDiscount <= 0) {
+    return props.discountedTotal
+  }
+
+  const itemsTotal = storeData.value.items.reduce(
+    (sum: number, item) => sum + (item.total ?? 0),
+    0,
+  )
+
+  if (!itemsTotal) {
+    return props.discountedTotal
+  }
+
+  const proportion = parseFloat((props.discountedTotal / itemsTotal).toFixed(2))
+  const discount =
+    storeData.value.discount_type === 'fixed'
+      ? modelDiscount * 100
+      : (itemsTotal * modelDiscount) / 100
+
+  return props.discountedTotal - Math.round(discount * proportion)
+})
+
 const taxAmount = computed<number>(() => {
-  if (localTax.calculation_type === 'fixed') {
-    return localTax.fixed_amount
-  }
-
-  if (props.discountedTotal) {
-    const taxPerItemEnabled = storeData.value.tax_per_item === 'YES'
-    const discountPerItemEnabled = storeData.value.discount_per_item === 'YES'
-
-    if (taxPerItemEnabled && !discountPerItemEnabled) {
-      return getTaxAmount()
-    }
-    if (storeData.value.tax_included) {
-      return Math.round(
-        props.discountedTotal -
-          props.discountedTotal / (1 + (localTax.percent ?? 0) / 100),
-      )
-    }
-    return Math.round((props.discountedTotal * (localTax.percent ?? 0)) / 100)
-  }
-  return 0
+  return calcTaxAmount(
+    effectiveBase.value,
+    localTax.percent,
+    localTax.fixed_amount,
+    localTax.calculation_type,
+    storeData.value.tax_included ?? false,
+    localTax.compound_tax ?? false,
+    props.totalSimpleTax,
+  )
 })
 
 watch(
@@ -163,8 +188,9 @@ watch(
   () => updateRowTax(),
 )
 
+// A sibling simple tax landing later widens this row's base when it is compound.
 watch(
-  () => props.totalTax,
+  () => props.totalSimpleTax,
   () => updateRowTax(),
 )
 
@@ -173,11 +199,18 @@ watch(
   () => updateRowTax(),
 )
 
-// Initialize selected tax if editing
-if (props.taxData.tax_type_id > 0) {
-  selectedTax.value =
-    taxTypes.value.find((_type) => _type.id === props.taxData.tax_type_id) ?? null
-}
+// Resolve the selected tax type when editing. The list is fetched by the parent
+// table, so it usually arrives after this row has been set up.
+watch(
+  () => props.taxTypes,
+  (types) => {
+    if (localTax.tax_type_id > 0) {
+      selectedTax.value =
+        types.find((_type) => _type.id === localTax.tax_type_id) ?? selectedTax.value
+    }
+  },
+  { immediate: true },
+)
 
 updateRowTax()
 
@@ -188,6 +221,7 @@ function onSelectTax(val: TaxType): void {
     val.calculation_type === 'fixed' ? val.fixed_amount : 0
   localTax.tax_type_id = val.id
   localTax.name = val.name
+  localTax.compound_tax = val.compound_tax ?? false
 
   updateRowTax()
 }
@@ -210,52 +244,41 @@ function openTaxModal(): void {
   modalStore.openModal({
     title: t('settings.tax_types.add_tax'),
     componentName: 'TaxTypeModal',
-    data: { itemIndex: props.itemIndex, taxIndex: props.index },
+    data: {
+      itemIndex: props.itemIndex,
+      taxIndex: props.index,
+      transaction_type: 'sales',
+    },
     size: 'sm',
+    refreshData: (...args: unknown[]) => {
+      const taxType = args[0]
+      if (isTaxType(taxType)) {
+        selectedTax.value = taxType
+        onSelectTax(taxType)
+        emit('taxTypeCreated', taxType)
+      }
+    },
   })
+}
+
+function isTaxType(value: unknown): value is TaxType {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    typeof value.id === 'number' &&
+    'name' in value &&
+    typeof value.name === 'string'
+  )
 }
 
 function removeTax(index: number): void {
   const store = props.store as Record<string, Record<string, unknown>>
   const formData = store[props.storeProp] as DocumentFormData
   formData.items[props.itemIndex].taxes?.splice(index, 1)
-  const item = formData.items[props.itemIndex]
-  item.tax = 0
-  item.totalTax = 0
-}
 
-function getTaxAmount(): number {
-  if (localTax.calculation_type === 'fixed') {
-    return localTax.fixed_amount
-  }
-
-  let itemsTotal = 0
-  let discount = 0
-  const itemTotal = props.discountedTotal
-  const modelDiscount = storeData.value.discount ?? 0
-  const type = storeData.value.discount_type
-  let discountedTotal = props.discountedTotal
-
-  if (modelDiscount > 0) {
-    storeData.value.items.forEach((item) => {
-      itemsTotal += item.total ?? 0
-    })
-    const proportion = parseFloat((itemTotal / itemsTotal).toFixed(2))
-    discount =
-      type === 'fixed'
-        ? modelDiscount * 100
-        : (itemsTotal * modelDiscount) / 100
-    const itemDiscount = Math.round(discount * proportion)
-    discountedTotal = itemTotal - itemDiscount
-  }
-
-  if (storeData.value.tax_included) {
-    return Math.round(
-      discountedTotal -
-        discountedTotal / (1 + (localTax.percent ?? 0) / 100),
-    )
-  }
-
-  return Math.round((discountedTotal * (localTax.percent ?? 0)) / 100)
+  // Re-sync the item so the remaining rows re-base off the new simple total
+  // instead of leaving stale `tax` / `totalTax` values behind.
+  props.updateItems()
 }
 </script>

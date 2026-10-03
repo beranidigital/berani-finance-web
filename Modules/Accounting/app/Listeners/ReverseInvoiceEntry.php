@@ -2,8 +2,8 @@
 
 namespace Modules\Accounting\Listeners;
 
+use App\Domains\Sales\Models\Invoice;
 use App\Events\FinancialDocumentDeleted;
-use App\Models\Invoice;
 use Modules\Accounting\Services\DocumentPostingService;
 
 class ReverseInvoiceEntry

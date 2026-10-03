@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\Payment;
+use App\Domains\Receivables\Models\Payment;
 use Illuminate\Foundation\Events\Dispatchable;
 
 class PaymentRefunded

@@ -30,10 +30,21 @@ const settingsRoutes: RouteRecordRaw[] = [
         name: 'settings.account.security',
         component: () => import('./views/UserSecurityView.vue'),
       },
+      {
+        path: 'devices',
+        name: 'settings.account.devices',
+        component: () => import('./views/DevicesView.vue'),
+      },
+      {
+        path: 'connected-apps',
+        name: 'settings.account.connected-apps',
+        component: () => import('./views/ConnectedAppsView.vue'),
+      },
     ],
   },
   {
     path: 'settings',
+    name: 'settings',
     component: () => import('./views/SettingsLayoutView.vue'),
     children: [
       {
@@ -157,15 +168,6 @@ const settingsRoutes: RouteRecordRaw[] = [
           isOwner: true,
         },
         component: () => import('./views/MailConfigView.vue'),
-      },
-      {
-        path: 'ai-config',
-        name: 'settings.ai-config',
-        meta: {
-          requiresAuth: true,
-          isOwner: true,
-        },
-        component: () => import('./views/AiConfigView.vue'),
       },
       {
         path: 'roles',

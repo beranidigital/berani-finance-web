@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Company;
-use App\Models\Expense;
-use App\Models\Invoice;
-use App\Models\Payment;
+use App\Domains\Accounts\Models\Company;
+use App\Domains\Purchases\Models\Expense;
+use App\Domains\Receivables\Models\Payment;
+use App\Domains\Sales\Models\Invoice;
 use Illuminate\Database\Migrations\Migration;
 use Modules\Accounting\Models\Account;
 use Modules\Accounting\Models\JournalEntry;

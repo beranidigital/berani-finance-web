@@ -2,7 +2,7 @@
 
 namespace Modules\Accounting\Models;
 
-use App\Models\Company;
+use App\Domains\Accounts\Models\Company;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;

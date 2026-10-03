@@ -64,11 +64,21 @@
       <!-- Action Card (1/3) -->
       <div class="mt-6 lg:mt-0">
         <div class="rounded-xl border border-line-default bg-surface-secondary p-6">
+          <!-- Managed install, not installed: the provider handles it -->
+          <p v-if="managed && !moduleData.installed" class="text-sm text-muted">
+            {{ $t('managed.modules_note') }}
+          </p>
+
+          <!-- Paid module on a managed install: not sold there yet -->
+          <p v-else-if="hosted && !moduleData.purchased" class="text-sm text-muted">
+            {{ $t('managed.paid_modules_note') }}
+          </p>
+
           <!-- Not purchased -->
-          <template v-if="!moduleData.purchased">
-            <a :href="buyLink" target="_blank">
-              <BaseButton size="lg" class="w-full flex items-center justify-center">
-                <BaseIcon name="ShoppingCartIcon" class="mr-2" />
+          <template v-else-if="!moduleData.purchased">
+            <a :href="buyLink" target="_blank" rel="noopener" class="block rounded-lg">
+              <BaseButton tag="span" size="lg" class="w-full flex items-center justify-center">
+                <BaseIcon name="ShoppingCartIcon" class="me-2" />
                 {{ $t('modules.buy_now') }}
               </BaseButton>
             </a>
@@ -84,7 +94,7 @@
               class="w-full flex items-center justify-center"
               @click="handleInstall"
             >
-              <BaseIcon v-if="!isInstalling" name="ArrowDownTrayIcon" class="mr-2 h-4 w-4" />
+              <BaseIcon v-if="!isInstalling" name="ArrowDownTrayIcon" class="me-2 h-4 w-4" />
               {{ $t('modules.install') }} v{{ moduleData.latest_module_version }}
             </BaseButton>
           </template>
@@ -101,14 +111,14 @@
 
             <div class="flex gap-2">
               <BaseButton
-                v-if="moduleData.update_available"
+                v-if="moduleData.update_available && !managed"
                 variant="primary"
                 :loading="isInstalling"
                 :disabled="isInstalling"
                 class="flex-1 flex items-center justify-center"
                 @click="handleInstall"
               >
-                <BaseIcon v-if="!isInstalling" name="ArrowPathIcon" class="mr-1.5 h-4 w-4" />
+                <BaseIcon v-if="!isInstalling" name="ArrowPathIcon" class="me-1.5 h-4 w-4" />
                 {{ $t('modules.update_to') }} {{ moduleData.latest_module_version }}
               </BaseButton>
 
@@ -117,12 +127,12 @@
                 variant="danger"
                 :loading="isDisabling"
                 :disabled="isDisabling"
-                :class="moduleData.update_available ? '' : 'flex-1'"
+                :class="moduleData.update_available && !managed ? '' : 'flex-1'"
                 class="flex items-center justify-center"
                 @click="handleDisable"
               >
-                <BaseIcon v-if="!isDisabling" name="NoSymbolIcon" class="h-4 w-4" :class="{ 'mr-1.5': !moduleData.update_available }" />
-                <span v-if="!moduleData.update_available">{{ $t('modules.disable') }}</span>
+                <BaseIcon v-if="!isDisabling" name="NoSymbolIcon" class="h-4 w-4" :class="{ 'me-1.5': !moduleData.update_available || managed }" />
+                <span v-if="!moduleData.update_available || managed">{{ $t('modules.disable') }}</span>
               </BaseButton>
               <BaseButton
                 v-else
@@ -132,10 +142,20 @@
                 class="flex-1 flex items-center justify-center"
                 @click="handleEnable"
               >
-                <BaseIcon v-if="!isEnabling" name="CheckIcon" class="mr-1.5 h-4 w-4" />
+                <BaseIcon v-if="!isEnabling" name="CheckIcon" class="me-1.5 h-4 w-4" />
                 {{ $t('modules.enable') }}
               </BaseButton>
             </div>
+
+            <BaseButton
+              v-if="!managed"
+              variant="primary-outline"
+              class="mt-3 w-full flex items-center justify-center"
+              @click="showUninstallModal = true"
+            >
+              <BaseIcon name="TrashIcon" class="me-1.5 h-4 w-4" />
+              {{ $t('modules.uninstall') }}
+            </BaseButton>
           </template>
 
           <!-- Installation Steps -->
@@ -228,6 +248,7 @@
         <div v-if="displayVideo" class="aspect-video">
           <iframe
             :src="videoUrl ?? ''"
+            :title="moduleData.name"
             class="w-full h-full"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -237,7 +258,7 @@
         <div v-else-if="expandedImage" class="relative">
           <img :src="expandedImage" alt="" class="w-full" />
           <button
-            class="absolute top-3 right-3 rounded-full bg-black/50 hover:bg-black/70 p-1.5 text-white transition-colors"
+            class="absolute top-3 end-3 rounded-full bg-black/50 hover:bg-black/70 p-1.5 text-white transition-colors"
             @click="expandedImage = null"
           >
             <BaseIcon name="XMarkIcon" class="h-5 w-5" />
@@ -315,7 +336,7 @@
           class="whitespace-nowrap text-sm font-medium text-primary-600 hover:text-primary-500"
         >
           {{ $t('modules.view_all') }}
-          <span aria-hidden="true"> &rarr;</span>
+          <span aria-hidden="true" class="inline-block rtl:-scale-x-100"> &rarr;</span>
         </a>
       </div>
       <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -326,6 +347,56 @@
     </div>
 
     <div class="p-6" />
+
+    <BaseModal :show="showUninstallModal" closable @close="closeUninstallModal">
+      <template #header>
+        {{ $t('modules.uninstall') }} {{ moduleData.name }}
+      </template>
+
+      <div class="space-y-4 p-6">
+        <p class="text-sm text-muted">{{ $t('modules.uninstall_warning') }}</p>
+
+        <template v-if="moduleData.supports_data_cleanup">
+          <label class="flex items-start gap-3 text-sm text-heading">
+            <input v-model="removeModuleData" type="checkbox" class="mt-1 h-4 w-4" />
+            <span>
+              <span class="font-medium">{{ $t('modules.remove_data') }}</span>
+              <span class="block text-muted">{{ $t('modules.remove_data_warning') }}</span>
+            </span>
+          </label>
+
+          <label v-if="removeModuleData" class="block text-sm font-medium text-heading">
+            {{ $t('modules.confirm_module_name', { name: moduleData.module_name }) }}
+            <input
+              v-model="uninstallConfirmation"
+              type="text"
+              class="mt-2 w-full rounded-md border border-line-default bg-surface px-3 py-2 text-heading"
+              :placeholder="moduleData.module_name"
+            />
+          </label>
+        </template>
+
+        <p v-else class="rounded-md bg-surface-tertiary p-3 text-sm text-muted">
+          {{ $t('modules.legacy_uninstall_notice') }}
+        </p>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3 border-t border-line-default px-6 py-4">
+          <BaseButton variant="primary-outline" @click="closeUninstallModal">
+            {{ $t('general.cancel') }}
+          </BaseButton>
+          <BaseButton
+            variant="danger"
+            :loading="isUninstalling"
+            :disabled="isUninstalling || (removeModuleData && uninstallConfirmation !== moduleData.module_name)"
+            @click="handleUninstall"
+          >
+            {{ $t('modules.uninstall') }}
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </BasePage>
 </template>
 
@@ -337,7 +408,10 @@ import { useModuleStore } from '../store'
 import type { InstallationStep } from '../store'
 import ModuleCard from '../components/ModuleCard.vue'
 import { useDialogStore } from '../../../../stores/dialog.store'
+import { useNotificationStore } from '../../../../stores/notification.store'
 import type { Module, ModuleLink } from '../../../../types/domain/module'
+import { getErrorTranslationKey, handleApiError } from '../../../../utils/error-handling'
+import { isManaged, providerManagesModules } from '../../../../utils/managed'
 
 interface ModuleLinkItem {
   icon: string
@@ -350,8 +424,14 @@ interface TabItem {
   label: string
 }
 
+// On a managed install without a writable Modules directory the provider
+// installs, updates and removes modules; with one, owners install official
+// modules themselves, but paid ones are not sold there yet.
+const managed = providerManagesModules()
+const hosted = isManaged()
 const moduleStore = useModuleStore()
 const dialogStore = useDialogStore()
+const notificationStore = useNotificationStore()
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
@@ -360,6 +440,10 @@ const isFetchingInitialData = ref<boolean>(true)
 const isInstalling = ref<boolean>(false)
 const isEnabling = ref<boolean>(false)
 const isDisabling = ref<boolean>(false)
+const isUninstalling = ref<boolean>(false)
+const showUninstallModal = ref<boolean>(false)
+const removeModuleData = ref<boolean>(false)
+const uninstallConfirmation = ref<string>('')
 const displayVideo = ref<boolean>(false)
 const expandedImage = ref<string | null>(null)
 const thumbnail = ref<string | null>(null)
@@ -413,7 +497,7 @@ const displayImages = computed<Array<{ url: string }>>(() => {
 })
 
 const buyLink = computed<string>(() => {
-  return `/modules/${moduleData.value?.slug ?? ''}`
+  return moduleData.value?.purchase_url ?? '#'
 })
 
 watch(() => route.params.slug, () => {
@@ -440,7 +524,7 @@ async function loadData(): Promise<void> {
 }
 
 async function handleInstall(): Promise<void> {
-  if (!moduleData.value) return
+  if (!moduleData.value?.latest_module_version) return
 
   installationSteps.length = 0
   isInstalling.value = true
@@ -448,9 +532,7 @@ async function handleInstall(): Promise<void> {
   const success = await moduleStore.installModule(
     {
       slug: moduleData.value.slug,
-      module_name: moduleData.value.module_name,
       version: moduleData.value.latest_module_version,
-      checksum_sha256: moduleData.value.latest_module_checksum_sha256,
     },
     (step) => {
       const existing = installationSteps.find(
@@ -471,42 +553,90 @@ async function handleInstall(): Promise<void> {
   }
 }
 
-function handleDisable(): void {
+async function handleDisable(): Promise<void> {
   if (!moduleData.value) return
 
-  dialogStore
-    .openDialog({
-      title: t('general.are_you_sure'),
-      message: t('modules.disable_warning'),
-      yesLabel: t('general.ok'),
-      noLabel: t('general.cancel'),
-      variant: 'danger',
-      hideNoButton: false,
-      size: 'lg',
-    })
-    .then(async (res: boolean) => {
-      if (res) {
-        isDisabling.value = true
-        const response = await moduleStore.disableModule(moduleData.value!.module_name)
-        isDisabling.value = false
+  const confirmed = await dialogStore.openDialog({
+    title: t('general.are_you_sure'),
+    message: t('modules.disable_warning'),
+    yesLabel: t('general.ok'),
+    noLabel: t('general.cancel'),
+    variant: 'danger',
+    hideNoButton: false,
+    size: 'lg',
+  })
 
-        if (response.success) {
-          setTimeout(() => location.reload(), 1500)
-        }
-      }
-    })
+  if (!confirmed) return
+
+  isDisabling.value = true
+  try {
+    const response = await moduleStore.disableModule(moduleData.value.module_name)
+    if (response.success) {
+      setTimeout(() => location.reload(), 1500)
+    }
+  } catch (error: unknown) {
+    showModuleActionError(error)
+  } finally {
+    isDisabling.value = false
+  }
 }
 
 async function handleEnable(): Promise<void> {
   if (!moduleData.value) return
 
   isEnabling.value = true
-  const res = await moduleStore.enableModule(moduleData.value.module_name)
-  isEnabling.value = false
-
-  if (res.success) {
-    setTimeout(() => location.reload(), 1500)
+  try {
+    const res = await moduleStore.enableModule(moduleData.value.module_name)
+    if (res.success) {
+      setTimeout(() => location.reload(), 1500)
+    }
+  } catch (error: unknown) {
+    showModuleActionError(error)
+  } finally {
+    isEnabling.value = false
   }
+}
+
+function closeUninstallModal(): void {
+  showUninstallModal.value = false
+  removeModuleData.value = false
+  uninstallConfirmation.value = ''
+}
+
+async function handleUninstall(): Promise<void> {
+  if (!moduleData.value) return
+
+  isUninstalling.value = true
+  try {
+    const response = await moduleStore.uninstallModule(moduleData.value.module_name, {
+      remove_data: removeModuleData.value,
+      confirmation: removeModuleData.value ? uninstallConfirmation.value : undefined,
+    })
+
+    if (response.success) {
+      closeUninstallModal()
+      setTimeout(() => location.reload(), 500)
+    }
+  } catch (error: unknown) {
+    showModuleActionError(error)
+  } finally {
+    isUninstalling.value = false
+  }
+}
+
+function showModuleActionError(error: unknown): void {
+  const normalizedError = handleApiError(error)
+  const translationKey = getErrorTranslationKey(normalizedError.message)
+
+  if (normalizedError.message === 'module_runtime_missing' && moduleData.value) {
+    moduleData.value.installed = false
+    moduleData.value.enabled = false
+  }
+
+  notificationStore.showNotification({
+    type: 'error',
+    message: translationKey ?? normalizedError.message,
+  })
 }
 
 function setDisplayImage(url: string): void {
